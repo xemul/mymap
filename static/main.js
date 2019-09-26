@@ -3,7 +3,11 @@ function loadSelected() {
 		url: apiserver + '/visited',
 		method: 'POST',
 		contentType: 'application/json',
-		data: JSON.stringify(areaCtl.selectedAreas),
+		data: JSON.stringify({
+			lat: areaCtl.point.lat,
+			lng: areaCtl.point.lng,
+			areas: areaCtl.selectedAreas
+		}),
 		crossOrigin: true,
 		success: (x) => {
 			console.log("Added to backend");
@@ -11,11 +15,9 @@ function loadSelected() {
 	})
 
 	areaCtl.selectedAreas.forEach((item, i) => { myareas.load(item) })
-	areaCtl.selectedAreas = [];
 
-	clickPoint.marker.remove()
-	areaCtl.point = null
-	areaCtl.availableAreas = null
+	clickPoint.remove()
+	areaCtl.clearSelection()
 }
 
 function removeLoaded(ev, area) {
@@ -29,8 +31,7 @@ function removeLoaded(ev, area) {
 	})
 
 	myareas.loaded.removeLayer(area.layer)
-	areaCtl.$delete(areaCtl.loadedAreas, area.id)
-	areaCtl.nrLoaded -= 1
+	areaCtl.dropLoaded(area)
 }
 
 var areaCtl = new Vue({
@@ -42,6 +43,32 @@ var areaCtl = new Vue({
 		loadedAreas: {},
 		nrLoaded: 0,
 	},
+	methods: {
+		clearSelection: () => {
+			areaCtl.point = null
+			areaCtl.availableAreas = null
+			areaCtl.selectedAreas = []
+		},
+
+		move: (latlng) => {
+			areaCtl.clearSelection()
+			areaCtl.point = latlng
+		},
+
+		addLoaded: (area, layer) => {
+			areaCtl.$set(areaCtl.loadedAreas, area.id, {
+					id: area.id,
+					name: area.name,
+					layer: layer,
+				})
+			areaCtl.nrLoaded += 1
+		},
+
+		dropLoaded: (area) => {
+			areaCtl.$delete(areaCtl.loadedAreas, area.id)
+			areaCtl.nrLoaded -= 1
+		},
+	}
 })
 
 var mymap = L.map('map').setView([53.505, 25.09], 5);
@@ -55,7 +82,7 @@ mymap.addLayer(osm);
 var clickPoint = clickPoint || {}
 
 clickPoint.marker = null
-clickPoint.add = function(e) {
+clickPoint.move = function(e) {
 	if (clickPoint.marker != null) {
 		clickPoint.marker.remove()
 	}
@@ -70,8 +97,8 @@ clickPoint.remove = function() {
 }
 
 mymap.on('click', (e) => {
-	clickPoint.add(e)
-	areaCtl.point = '' + e.latlng.lat.toFixed(4) + ', ' + e.latlng.lng.toFixed(4);
+	clickPoint.move(e)
+	areaCtl.move(e.latlng)
 
 	reqwest({
 		url: 'https://global.mapit.mysociety.org/point/4326/'+e.latlng.lng+','+e.latlng.lat,
@@ -98,12 +125,7 @@ myareas.area_loaded = function(data) {
 	});
 
 	myareas.loaded.addLayer(area);
-	areaCtl.$set(areaCtl.loadedAreas, this.myareas.id, {
-			id: this.myareas.id,
-			name: this.myareas.name,
-			layer: L.stamp(area),
-		})
-	areaCtl.nrLoaded += 1
+	areaCtl.addLoaded(this.myareas, L.stamp(area))
 
 	console.log("Loaded " + this.myareas.name)
 };

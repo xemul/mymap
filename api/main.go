@@ -8,6 +8,12 @@ import (
 	"github.com/gorilla/handlers"
 )
 
+type Save struct {
+	Lat	float64		`json:"lat"`
+	Lng	float64		`json:"lng"`
+	Areas	[]*Area		`json:"areas"`
+}
+
 type Area struct {
 	Id	int		`json:"id"`
 	Name	string		`json:"name"`
@@ -20,16 +26,16 @@ func handleListVisited(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSaveVisited(w http.ResponseWriter, r *http.Request) {
-	var areas []Area
+	var sv Save
 
 	defer r.Body.Close()
-	err := json.NewDecoder(r.Body).Decode(&areas)
+	err := json.NewDecoder(r.Body).Decode(&sv)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("-> POST [%v]", areas)
+	log.Printf("-> POST [%v]", &sv)
 	w.WriteHeader(http.StatusOK)
 }
 

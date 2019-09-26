@@ -20,9 +20,12 @@
 
 <div id="map"></div>
 <div id="control">
+	<div id="login">
+		Not logged in
+	</div>
 	<div id="marker">
 		<div v-if="point != null">
-			Current position: {{point}}<br>
+			Current position: {{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}<br>
 		</div>
 		<div v-if="point == null">
 			Click on the map
