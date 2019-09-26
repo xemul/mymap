@@ -80,13 +80,13 @@ var osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
 mymap.addLayer(osm);
 
 var clickPoint = clickPoint || {}
-
 clickPoint.marker = null
-clickPoint.move = function(e) {
+
+clickPoint.move = function(latlng) {
 	if (clickPoint.marker != null) {
 		clickPoint.marker.remove()
 	}
-	clickPoint.marker = L.marker(e.latlng).addTo(mymap);
+	clickPoint.marker = L.marker(latlng).addTo(mymap);
 }
 
 clickPoint.remove = function() {
@@ -97,7 +97,7 @@ clickPoint.remove = function() {
 }
 
 mymap.on('click', (e) => {
-	clickPoint.move(e)
+	clickPoint.move(e.latlng)
 	areaCtl.move(e.latlng)
 
 	reqwest({
