@@ -1,0 +1,59 @@
+<html>
+<head>
+	
+	<title>MyMap</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
+	<link rel="manifest" href="/img/site.webmanifest">
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+	<script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/reqwest/2.0.5/reqwest.min.js" crossorigin=""></script>
+	<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="map"></div>
+<div id="point">
+	<div id="marker">
+		<div v-if="point != null">
+			Current position: {{point}}<br>
+		</div>
+		<div v-if="point == null">
+			Click on the map
+		</div>
+	</div>
+	<div id="available" v-if="availableAreas != null">
+		<hr>Available<br>
+		<template v-for="area in availableAreas">
+			<input type="checkbox" v-bind:value="area" v-model="selectedAreas">
+			<label>{{area.name}} ( {{area.type}} )</label><br>
+		</template>
+	</div>
+	<div id="selected" v-if="selectedAreas.length > 0">
+		<hr>Selected<br>
+		<ul>
+			<li v-for="area in selectedAreas">
+				{{area.name}}
+			</li>
+		</ul>
+		<input value="Paint" onclick="loadSelected()" type="button">
+	</div>
+	<div id="loaded" v-if="nrLoaded > 0">
+		<hr>Loaded<br>
+		<ul>
+			<li v-for="area in loadedAreas">
+				{{area.name}} <small><a href="#" v-on:click="removeLoaded($event, area)">(remove)</a></small>
+			</li>
+		</ul>
+	</div>
+</div>
+
+<script src="/main.js"></script>
+</body>
+</html>

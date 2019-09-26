@@ -1,0 +1,32 @@
+body {
+  padding:0; margin:0 auto;
+  width:800px;
+  font-family:sans-serif;
+}
+
+#map {
+  position: absolute;
+  top:0;
+  left:0;
+  margin:2%;
+  width:70%;
+  height:90%;
+}
+
+#point {
+  position: absolute;
+  top:0;
+  right:0;
+  margin:2%;
+  width:25%;
+}
+
+#available {
+  margin: 5%
+}
+#selected {
+  margin: 5%
+}
+#loaded {
+  margin: 5%
+}
