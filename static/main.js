@@ -1,6 +1,6 @@
 function loadSelected() {
 	reqwest({
-		url: '/visited',
+		url: apiserver + '/visited',
 		method: 'POST',
 		contentType: 'application/json',
 		data: JSON.stringify(areaCtl.selectedAreas),
@@ -20,7 +20,7 @@ function loadSelected() {
 
 function removeLoaded(ev, area) {
 	reqwest({
-			url: '/visited?id=' + area.id,
+			url: apiserver + '/visited?id=' + area.id,
 			method: 'DELETE',
 			crossOrigin: true,
 			success: (x) => {
@@ -34,7 +34,7 @@ function removeLoaded(ev, area) {
 }
 
 var areaCtl = new Vue({
-	el: '#point',
+	el: '#control',
 	data: {
 		point: null,
 		availableAreas: null,
@@ -89,7 +89,7 @@ myareas.loaded = L.featureGroup().addTo(mymap);
 myareas.area_loaded = function(data) {
 	var style = {
 		"weight": 0.01,
-		"color": "#4041ff",
+		"color": areaColor,
 	};
 	var area = new L.GeoJSON(data, { style: style });
 	area.on('dblclick', function(e){
@@ -122,7 +122,7 @@ myareas.load = function(item) {
 }
 
 reqwest({
-		url: '/visited',
+		url: apiserver + '/visited',
 		method: 'GET',
 		type: 'json',
 		crossOrigin: true,
