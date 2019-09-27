@@ -22,5 +22,4 @@ type LocalJsonFile struct {
 
 type AreaFile struct {
 	Area			`json:",inline"`
-	Count	int		`json:"count"`
 }

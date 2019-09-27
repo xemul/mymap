@@ -23,14 +23,18 @@ func (s *LocalJsonStorage)Save(sv *SaveReq) error {
 		return err
 	}
 
+	dirty := false
 	for _, area := range sv.Areas {
 		af, ok := f.Areas[area.Id]
-		if ok {
-			af.Count += 1
-		} else {
-			af = &AreaFile{ Area: *area, Count: 1}
+		if !ok {
+			af = &AreaFile{ Area: *area }
 			f.Areas[area.Id] = af
+			dirty = true
 		}
+	}
+
+	if !dirty {
+		return nil
 	}
 
 	return s.saveToFile(f)
