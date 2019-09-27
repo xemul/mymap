@@ -60,8 +60,9 @@ var areaCtl = new Vue({
 			areaCtl.nrLoaded += 1
 		},
 
-		updateLoaded: (area) => {
+		updateLoaded: (area, layer) => {
 			area.state = "ready"
+			area.layer = layer
 			areaCtl.$set(areaCtl.loadedAreas, area.id, area)
 		},
 
@@ -80,6 +81,15 @@ var areaCtl = new Vue({
 					state:	"loading",
 					type:	area.type,
 				})
+			})
+			areas.sort((a,b)=>{
+				if (a.type > b.type) {
+					return 1
+				} else if (a.type < b.type) {
+					return -1
+				} else {
+					return 0
+				}
 			})
 			areaCtl.availableAreas = areas
 		},
@@ -144,7 +154,7 @@ myareas.area_loaded = function(data) {
 	});
 
 	myareas.loaded.addLayer(area)
-	areaCtl.updateLoaded(this.area)
+	areaCtl.updateLoaded(this.area, L.stamp(area))
 
 	console.log("Loaded " + this.area.name)
 };
