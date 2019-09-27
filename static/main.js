@@ -180,7 +180,9 @@ reqwest({
 		type: 'json',
 		crossOrigin: true,
 		success: (data) => {
-			console.log('Visited areas: ');
-			console.log(data);
+			data.areas.forEach((item, i) => {
+				item.state = "loading"
+				myareas.load(item)
+			})
 		},
 })

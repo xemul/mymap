@@ -2,31 +2,26 @@ package main
 
 import (
 	"log"
+	"strconv"
 	"net/http"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/handlers"
 )
 
-type Save struct {
-	Lat	float64		`json:"lat"`
-	Lng	float64		`json:"lng"`
-	Areas	[]*Area		`json:"areas"`
-}
-
-type Area struct {
-	Id	int		`json:"id"`
-	Name	string		`json:"name"`
-	Type	string		`json:"type"`
-}
-
 func handleListVisited(w http.ResponseWriter, r *http.Request) {
-	log.Printf("-> GET")
+	load, err := storage.Load()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(load)
 }
 
 func handleSaveVisited(w http.ResponseWriter, r *http.Request) {
-	var sv Save
+	var sv SaveReq
 
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&sv)
@@ -35,13 +30,31 @@ func handleSaveVisited(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("-> POST [%v]", &sv)
+	err = storage.Save(&sv)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
 func handleForgetVisited(w http.ResponseWriter, r *http.Request) {
-	areaId := r.URL.Query()["id"]
-	log.Printf("-> DELETE %s", areaId)
+	areaId, err := strconv.Atoi(r.URL.Query()["id"][0])
+	if err != nil {
+		http.Error(w, "id must be integer", http.StatusBadRequest)
+		return
+	}
+
+	ok, err := storage.Remove(areaId)
+	if err != nil {
+		if ok {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Error(w, "no such area", http.StatusNotFound)
+		}
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 
