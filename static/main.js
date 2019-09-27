@@ -15,6 +15,7 @@ function loadSelected() {
 	})
 
 	areaCtl.selectedAreas.forEach((item, i) => { myareas.load(item) })
+	L.marker(areaCtl.point, { icon: placeIcon }).addTo(mymap)
 
 	clickPoint.remove()
 	areaCtl.clearSelection()
@@ -110,6 +111,12 @@ const pointIcon = L.icon({
 	iconAnchor:	[15, 47],
 })
 
+const placeIcon = L.icon({
+	iconUrl:	'img/place.svg',
+	iconSize:	[14, 21],
+	iconAnchor:	[ 7, 20],
+})
+
 var clickPoint = clickPoint || {}
 clickPoint.marker = null
 
@@ -189,6 +196,9 @@ reqwest({
 			data.areas.forEach((item, i) => {
 				item.state = "loading"
 				myareas.load(item)
+			})
+			data.points.forEach((item, i) => {
+				L.marker([item.lat, item.lng], {icon: placeIcon}).addTo(mymap);
 			})
 		},
 })

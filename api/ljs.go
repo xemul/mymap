@@ -23,18 +23,14 @@ func (s *LocalJsonStorage)Save(sv *SaveReq) error {
 		return err
 	}
 
-	dirty := false
+	f.Points = append(f.Points, &PointFile{Point: sv.Point})
+
 	for _, area := range sv.Areas {
 		af, ok := f.Areas[area.Id]
 		if !ok {
 			af = &AreaFile{ Area: *area }
 			f.Areas[area.Id] = af
-			dirty = true
 		}
-	}
-
-	if !dirty {
-		return nil
 	}
 
 	return s.saveToFile(f)
@@ -52,6 +48,10 @@ func (s *LocalJsonStorage)Load() (*LoadResp, error) {
 	var ret LoadResp
 	for _, area := range f.Areas {
 		ret.Areas = append(ret.Areas, &area.Area)
+	}
+
+	for _, pt := range f.Points {
+		ret.Points = append(ret.Points, &pt.Point)
 	}
 
 	return &ret, nil
