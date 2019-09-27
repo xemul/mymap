@@ -104,6 +104,12 @@ var osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
     });
 mymap.addLayer(osm);
 
+const pointIcon = L.icon({
+	iconUrl:	'img/point.svg',
+	iconSize:	[30, 48],
+	iconAnchor:	[15, 47],
+})
+
 var clickPoint = clickPoint || {}
 clickPoint.marker = null
 
@@ -111,7 +117,7 @@ clickPoint.move = function(latlng) {
 	if (clickPoint.marker != null) {
 		clickPoint.marker.remove()
 	}
-	clickPoint.marker = L.marker(latlng).addTo(mymap);
+	clickPoint.marker = L.marker(latlng, {icon: pointIcon}).addTo(mymap);
 }
 
 clickPoint.remove = function() {
