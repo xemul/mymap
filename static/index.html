@@ -31,27 +31,24 @@
 			Click on the map
 		</div>
 	</div>
-	<div id="available" v-if="availableAreas != null">
+	<div id="available" v-if="availableAreas.length != 0">
 		<hr>Available<br>
 		<template v-for="area in availableAreas">
 			<input type="checkbox" v-bind:value="area" v-model="selectedAreas">
 			<label>{{area.name}} ( {{area.type}} )</label><br>
 		</template>
 	</div>
-	<div id="selected" v-if="selectedAreas.length > 0">
-		<hr>Selected<br>
-		<ul>
-			<li v-for="area in selectedAreas">
-				{{area.name}}
-			</li>
-		</ul>
-		<input value="Paint" onclick="loadSelected()" type="button">
-	</div>
 	<div id="loaded" v-if="nrLoaded > 0">
 		<hr>Loaded<br>
 		<ul>
 			<li v-for="area in loadedAreas">
-				{{area.name}} <small><a href="#" v-on:click="removeLoaded($event, area)">(remove)</a></small>
+				{{area.name}}
+				<div v-if="area.state != 'ready'">
+					<small>{{area.state}}...</small>
+				</div>
+				<div v-if="area.state == 'ready'">
+					<small><a href="#" v-on:click="removeLoaded($event, area)">(remove)</a></small>
+				</div>
 			</li>
 		</ul>
 	</div>

@@ -38,7 +38,7 @@ var areaCtl = new Vue({
 	el: '#control',
 	data: {
 		point: null,
-		availableAreas: null,
+		availableAreas: [],
 		selectedAreas: [],
 		loadedAreas: {},
 		nrLoaded: 0,
@@ -46,7 +46,7 @@ var areaCtl = new Vue({
 	methods: {
 		clearSelection: () => {
 			areaCtl.point = null
-			areaCtl.availableAreas = null
+			areaCtl.availableAreas = []
 			areaCtl.selectedAreas = []
 		},
 
@@ -55,18 +55,33 @@ var areaCtl = new Vue({
 			areaCtl.point = latlng
 		},
 
-		addLoaded: (area, layer) => {
-			areaCtl.$set(areaCtl.loadedAreas, area.id, {
-					id: area.id,
-					name: area.name,
-					layer: layer,
-				})
+		addLoaded: (area) => {
+			areaCtl.$set(areaCtl.loadedAreas, area.id, area)
 			areaCtl.nrLoaded += 1
+		},
+
+		updateLoaded: (area) => {
+			area.state = "ready"
+			areaCtl.$set(areaCtl.loadedAreas, area.id, area)
 		},
 
 		dropLoaded: (area) => {
 			areaCtl.$delete(areaCtl.loadedAreas, area.id)
 			areaCtl.nrLoaded -= 1
+		},
+
+		setAvailable: (data) => {
+			let areas = []
+			Object.keys(data).forEach((key, idx) => {
+				var area = data[key]
+				areas.push({
+					id:	area.id,
+					name:	area.name,
+					state:	"loading",
+					type:	area.type,
+				})
+			})
+			areaCtl.availableAreas = areas
 		},
 	}
 })
@@ -105,7 +120,11 @@ mymap.on('click', (e) => {
 		method: 'GET',
 		crossOrigin: true,
 		success: (data) => {
-			areaCtl.availableAreas = data;
+			areaCtl.setAvailable(data)
+		},
+		error: (e) => {
+			clickPoint.remove()
+			areaCtl.clearSelection()
 		},
 	})
 })
@@ -124,19 +143,21 @@ myareas.area_loaded = function(data) {
 	    mymap.setZoomAround(e.containerPoint, z);
 	});
 
-	myareas.loaded.addLayer(area);
-	areaCtl.addLoaded(this.myareas, L.stamp(area))
+	myareas.loaded.addLayer(area)
+	areaCtl.updateLoaded(this.area)
 
-	console.log("Loaded " + this.myareas.name)
+	console.log("Loaded " + this.area.name)
 };
 
-myareas.load = function(item) {
-	if (!areaCtl.loadedAreas[item.id]) {
-		console.log("Requesting ", item.name);
+myareas.load = function(area) {
+	if (!areaCtl.loadedAreas[area.id]) {
+		console.log("Requesting ", area.name);
+		areaCtl.addLoaded(area)
+
 		reqwest({
-			url: 'https://global.mapit.mysociety.org/area/' + item.id + '.geojson?simplify_tolerance=0.0001',
+			url: 'https://global.mapit.mysociety.org/area/' + area.id + '.geojson?simplify_tolerance=0.0001',
 			type: 'json',
-			myareas: { id: item.id, name: item.name },
+			area: area,
 			success: myareas.area_loaded,
 			crossOrigin: true
 		});
