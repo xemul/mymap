@@ -46,7 +46,13 @@ func handleForgetVisited(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := storage.Remove(areaId)
+	typ := r.URL.Query()["type"]
+	if len(typ) == 0 {
+		http.Error(w, "need type", http.StatusBadRequest)
+		return
+	}
+
+	ok, err := storage.Remove(areaId, typ[0])
 	if err != nil {
 		if ok {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

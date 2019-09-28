@@ -7,12 +7,14 @@ type Area struct {
 }
 
 type Point struct {
+	Id	int			`json:"id"`
+	Name	string			`json:"name"`
 	Lat	float64			`json:"lat"`
 	Lng	float64			`json:"lng"`
 }
 
 type SaveReq struct {
-	Point				`json:",inline"`
+	Point	*Point			`json:"point,omitempty"`
 	Areas	[]*Area			`json:"areas"`
 }
 
@@ -22,7 +24,7 @@ type LoadResp struct {
 }
 
 type LocalJsonFile struct {
-	Points	[]*PointFile		`json:"points"`
+	Points	map[int]*PointFile	`json:"points"`
 	Areas	map[int]*AreaFile	`json:"areas"`
 }
 

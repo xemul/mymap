@@ -1,75 +1,115 @@
 function loadSelected() {
+	var rq = {
+		areas: areaCtl.selectedAreas
+	}
+
+	if (areaCtl.pointName) {
+		rq.point = {
+			id: Math.floor(Math.random() * 1000000),
+			name: areaCtl.pointName,
+			lat: areaCtl.point.lat,
+			lng: areaCtl.point.lng,
+		}
+	}
+
+	console.log("save:", areaCtl.pointName)
 	reqwest({
 		url: apiserver + '/visited',
 		method: 'POST',
 		contentType: 'application/json',
-		data: JSON.stringify({
-			lat: areaCtl.point.lat,
-			lng: areaCtl.point.lng,
-			areas: areaCtl.selectedAreas
-		}),
+		data: JSON.stringify(rq),
 		crossOrigin: true,
 		success: (x) => {
 			console.log("Added to backend");
 		},
 	})
 
-	areaCtl.selectedAreas.forEach((item, i) => { myareas.load(item) })
-	L.marker(areaCtl.point, { icon: placeIcon }).addTo(mymap)
+	rq.areas.forEach((item, i) => { myareas.addArea(item) })
+	if (rq.point) {
+		myareas.addPoint(rq.point)
+	}
 
 	clickPoint.remove()
 	areaCtl.clearSelection()
 }
 
-function removeLoaded(ev, area) {
+function removeArea(ev, area) {
 	reqwest({
-			url: apiserver + '/visited?id=' + area.id,
+			url: apiserver + '/visited?type=area&id=' + area.id,
 			method: 'DELETE',
 			crossOrigin: true,
 			success: (x) => {
-				console.log("Removed from backend")
+				console.log("Removed area from backend")
 			},
 	})
 
 	myareas.loaded.removeLayer(area.layer)
-	areaCtl.dropLoaded(area)
+	areaCtl.dropArea(area)
+}
+
+function removePoint(ev, pnt) {
+	reqwest({
+			url: apiserver + '/visited?type=point&id=' + pnt.id,
+			method: 'DELETE',
+			crossOrigin: true,
+			success: (x) => {
+				console.log("Removed point from backend")
+			},
+	})
+
+	mymap.removeLayer(pnt.marker)
+	areaCtl.dropPoint(pnt)
 }
 
 var areaCtl = new Vue({
 	el: '#control',
 	data: {
 		point: null,
+		pointName: "",
 		availableAreas: [],
 		selectedAreas: [],
 		loadedAreas: {},
-		nrLoaded: 0,
+		nrAreas: 0,
+		loadedPoints: {},
+		nrPoints: 0,
 	},
 	methods: {
-		clearSelection: () => {
-			areaCtl.point = null
-			areaCtl.availableAreas = []
-			areaCtl.selectedAreas = []
-		},
-
 		move: (latlng) => {
 			areaCtl.clearSelection()
 			areaCtl.point = latlng
 		},
 
-		addLoaded: (area) => {
+		addArea: (area) => {
 			areaCtl.$set(areaCtl.loadedAreas, area.id, area)
-			areaCtl.nrLoaded += 1
+			areaCtl.nrAreas += 1
 		},
 
-		updateLoaded: (area, layer) => {
+		updateArea: (area, layer) => {
 			area.state = "ready"
 			area.layer = layer
 			areaCtl.$set(areaCtl.loadedAreas, area.id, area)
 		},
 
-		dropLoaded: (area) => {
+		dropArea: (area) => {
 			areaCtl.$delete(areaCtl.loadedAreas, area.id)
-			areaCtl.nrLoaded -= 1
+			areaCtl.nrAreas -= 1
+		},
+
+		addPoint: (pt) => {
+			areaCtl.$set(areaCtl.loadedPoints, pt.name, pt)
+			areaCtl.nrPoints += 1
+		},
+
+		dropPoint: (pt) => {
+			areaCtl.$delete(areaCtl.loadedPoints, pt.name)
+			areaCtl.nrPoints -= 1
+		},
+
+		clearSelection: () => {
+			areaCtl.point = null
+			areaCtl.pointName = ""
+			areaCtl.availableAreas = []
+			areaCtl.selectedAreas = []
 		},
 
 		setAvailable: (data) => {
@@ -155,15 +195,15 @@ myareas.area_loaded = function(data) {
 	});
 
 	myareas.loaded.addLayer(area)
-	areaCtl.updateLoaded(this.area, L.stamp(area))
+	areaCtl.updateArea(this.area, L.stamp(area))
 
 	console.log("Loaded " + this.area.name)
 };
 
-myareas.load = function(area) {
+myareas.addArea = function(area) {
 	if (!areaCtl.loadedAreas[area.id]) {
 		console.log("Requesting ", area.name);
-		areaCtl.addLoaded(area)
+		areaCtl.addArea(area)
 
 		reqwest({
 			url: 'https://global.mapit.mysociety.org/area/' + area.id + '.geojson?simplify_tolerance=0.0001',
@@ -175,18 +215,27 @@ myareas.load = function(area) {
 	}
 }
 
+myareas.addPoint = function(pt) {
+	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(mymap)
+	areaCtl.addPoint(pt)
+}
+
 reqwest({
 		url: apiserver + '/visited',
 		method: 'GET',
 		type: 'json',
 		crossOrigin: true,
 		success: (data) => {
-			data.areas.forEach((item, i) => {
-				item.state = "loading"
-				myareas.load(item)
-			})
-			data.points.forEach((item, i) => {
-				L.marker([item.lat, item.lng], {icon: placeIcon}).addTo(mymap);
-			})
+			if (data.areas) {
+				data.areas.forEach((item, i) => {
+					item.state = "loading"
+					myareas.addArea(item)
+				})
+			}
+			if (data.points) {
+				data.points.forEach((item, i) => {
+					myareas.addPoint(item)
+				})
+			}
 		},
 })

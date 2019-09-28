@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"sync"
+	"errors"
 	"encoding/json"
 )
 
@@ -23,14 +24,31 @@ func (s *LocalJsonStorage)Save(sv *SaveReq) error {
 		return err
 	}
 
-	f.Points = append(f.Points, &PointFile{Point: sv.Point})
+	dirty := false
+
+	if sv.Point != nil {
+		if f.Points == nil {
+			f.Points = make(map[int]*PointFile)
+		}
+
+		f.Points[sv.Point.Id] = &PointFile{Point: *sv.Point}
+		dirty = true
+	}
 
 	for _, area := range sv.Areas {
-		af, ok := f.Areas[area.Id]
-		if !ok {
-			af = &AreaFile{ Area: *area }
-			f.Areas[area.Id] = af
+		if f.Areas == nil {
+			f.Areas = make(map[int]*AreaFile)
 		}
+
+		_, ok := f.Areas[area.Id]
+		if !ok {
+			f.Areas[area.Id] = &AreaFile{ Area: *area }
+			dirty = true
+		}
+	}
+
+	if !dirty {
+		return nil
 	}
 
 	return s.saveToFile(f)
@@ -57,7 +75,7 @@ func (s *LocalJsonStorage)Load() (*LoadResp, error) {
 	return &ret, nil
 }
 
-func (s *LocalJsonStorage)Remove(id int) (bool, error) {
+func (s *LocalJsonStorage)Remove(id int, typ string) (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -66,12 +84,25 @@ func (s *LocalJsonStorage)Remove(id int) (bool, error) {
 		return false, err
 	}
 
-	_, ok := f.Areas[id]
-	if !ok {
-		return false, nil
+	switch {
+	case typ == "area":
+		_, ok := f.Areas[id]
+		if !ok {
+			return false, nil
+		}
+
+		delete(f.Areas, id)
+	case typ == "point":
+		_, ok := f.Points[id]
+		if !ok {
+			return false, nil
+		}
+
+		delete(f.Points, id)
+	default:
+		return false, errors.New("")
 	}
 
-	delete(f.Areas, id)
 	return true, s.saveToFile(f)
 }
 
@@ -79,9 +110,7 @@ func (s *LocalJsonStorage)loadFromFile() (*LocalJsonFile, error) {
 	f, err := os.Open(localFileName)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &LocalJsonFile{
-				Areas:	make(map[int]*AreaFile),
-			}, nil
+			return &LocalJsonFile{ }, nil
 		}
 
 		return nil, err
