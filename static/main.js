@@ -105,18 +105,6 @@ var osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
     });
 mymap.addLayer(osm);
 
-const pointIcon = L.icon({
-	iconUrl:	'img/point.svg',
-	iconSize:	[30, 48],
-	iconAnchor:	[15, 47],
-})
-
-const placeIcon = L.icon({
-	iconUrl:	'img/place.svg',
-	iconSize:	[14, 21],
-	iconAnchor:	[ 7, 20],
-})
-
 var clickPoint = clickPoint || {}
 clickPoint.marker = null
 
