@@ -230,6 +230,7 @@ mypoints.visible = true
 
 mypoints.addPoint = function(pt) {
 	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(mypoints.loaded)
+	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
 	areaCtl.addPoint(pt)
 }
 

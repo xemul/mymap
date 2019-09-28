@@ -1,5 +1,7 @@
 var apiserver = "http://localhost:8082"
+
 const areaColor = "#4041ff"
+const placeTolltipOpacity = 0.7
 
 const pointIcon = L.icon({
 	iconUrl:	'img/point.svg',
