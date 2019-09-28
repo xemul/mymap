@@ -56,7 +56,7 @@
 		</ul>
 	</div>
 	<div id="loadedPoints" v-if="nrPoints > 0">
-		<hr>Points<br>
+		<hr>Points <input checked="true" onclick="togglePoints()" type="checkbox"><br>
 		<ul>
 			<li v-for="pnt in loadedPoints">
 				{{pnt.name}} <small>({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</small>

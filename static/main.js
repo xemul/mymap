@@ -25,7 +25,7 @@ function loadSelected() {
 
 	rq.areas.forEach((item, i) => { myareas.addArea(item) })
 	if (rq.point) {
-		myareas.addPoint(rq.point)
+		mypoints.addPoint(rq.point)
 	}
 
 	clickPoint.remove()
@@ -56,8 +56,18 @@ function removePoint(ev, pnt) {
 			},
 	})
 
-	mymap.removeLayer(pnt.marker)
+	mypoints.loaded.removeLayer(pnt.marker)
 	areaCtl.dropPoint(pnt)
+}
+
+function togglePoints() {
+	if (mypoints.visible) {
+		mymap.removeLayer(mypoints.loaded)
+		mypoints.visible = false
+	} else {
+		mymap.addLayer(mypoints.loaded)
+		mypoints.visible = true
+	}
 }
 
 var areaCtl = new Vue({
@@ -214,8 +224,12 @@ myareas.addArea = function(area) {
 	}
 }
 
-myareas.addPoint = function(pt) {
-	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(mymap)
+var mypoints = mypoints || {}
+mypoints.loaded = L.layerGroup().addTo(mymap);
+mypoints.visible = true
+
+mypoints.addPoint = function(pt) {
+	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(mypoints.loaded)
 	areaCtl.addPoint(pt)
 }
 
@@ -233,7 +247,7 @@ reqwest({
 			}
 			if (data.points) {
 				data.points.forEach((item, i) => {
-					myareas.addPoint(item)
+					mypoints.addPoint(item)
 				})
 			}
 		},
