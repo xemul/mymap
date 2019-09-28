@@ -35,7 +35,7 @@
 		<hr>Available<br>
 		<template v-for="area in availableAreas">
 			<input type="checkbox" v-bind:value="area" v-model="selectedAreas">
-			<label>{{area.name}} ( {{area.type}} )</label><br>
+			<label>{{area.name}} (<small>{{area.type}}</small>)</label><br>
 		</template>
 		<input v-model="pointName" placeholder="enter the point name">
 		<input value="Paint" onclick="loadSelected()" type="button">
@@ -59,7 +59,7 @@
 		<hr>Points<br>
 		<ul>
 			<li v-for="pnt in loadedPoints">
-				{{pnt.name}} <small>( {{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}} )</small>
+				{{pnt.name}} <small>({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</small>
 				<small><a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
 			</li>
 		</ul>

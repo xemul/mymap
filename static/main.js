@@ -12,7 +12,6 @@ function loadSelected() {
 		}
 	}
 
-	console.log("save:", areaCtl.pointName)
 	reqwest({
 		url: apiserver + '/visited',
 		method: 'POST',
