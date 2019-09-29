@@ -7,9 +7,9 @@ function loadSelected() {
 		rq.point = {
 			id: Math.floor(Math.random() * 1000000),
 			name: areaCtl.pointName,
-			lat: areaCtl.point.lat,
-			lng: areaCtl.point.lng,
-			countries: areaCtl.pointCountries,
+			lat: markerCtl.latlng.lat,
+			lng: markerCtl.latlng.lng,
+			countries: markerCtl.countries,
 		}
 	}
 
@@ -29,7 +29,7 @@ function loadSelected() {
 		mypoints.addPoint(rq.point)
 	}
 
-	clickPoint.remove()
+	mymarker.remove()
 	areaCtl.clearSelection()
 }
 
@@ -105,12 +105,25 @@ var hidePointsToggle = new toggle("show", "hide",
 	}
 )
 
+var loginCtl = new Vue({
+	el: '#login',
+	data: {
+		status: "Not logged in",
+	},
+})
+
+var markerCtl = new Vue({
+	el: '#marker',
+	data: {
+		latlng: null,
+		countries: [],
+	},
+})
+
 var areaCtl = new Vue({
 	el: '#control',
 	data: {
-		point: null,
 		pointName: "",
-		pointCountries: [],
 		availableAreas: [],
 		showTypes: showTypesToggle,
 		selectedAreas: [],
@@ -123,7 +136,6 @@ var areaCtl = new Vue({
 	methods: {
 		move: (latlng) => {
 			areaCtl.clearSelection()
-			areaCtl.point = latlng
 		},
 
 		addArea: (area) => {
@@ -170,9 +182,7 @@ var areaCtl = new Vue({
 		},
 
 		clearSelection: () => {
-			areaCtl.point = null
 			areaCtl.pointName = ""
-			areaCtl.pointCountries = []
 			areaCtl.availableAreas = []
 			areaCtl.selectedAreas = []
 			areaCtl.showTypes.reset()
@@ -207,7 +217,7 @@ var areaCtl = new Vue({
 				}
 			})
 			areaCtl.availableAreas = areas
-			areaCtl.pointCountries = countries
+			markerCtl.countries = countries
 		},
 	}
 })
@@ -220,25 +230,29 @@ var osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
     });
 mymap.addLayer(osm);
 
-var clickPoint = clickPoint || {}
-clickPoint.marker = null
+var mymarker = mymarker || {}
+mymarker.lm = null
 
-clickPoint.move = function(latlng) {
-	if (clickPoint.marker != null) {
-		clickPoint.marker.remove()
+mymarker.move = function(latlng) {
+	if (mymarker.lm != null) {
+		mymarker.lm.remove()
 	}
-	clickPoint.marker = L.marker(latlng, {icon: pointIcon}).addTo(mymap);
+	mymarker.lm = L.marker(latlng, {icon: pointIcon}).addTo(mymap);
+	markerCtl.latlng = latlng
 }
 
-clickPoint.remove = function() {
-	if (clickPoint.marker != null) {
-		clickPoint.marker.remove()
-		clickPoint.marker = null
+mymarker.remove = function() {
+	if (mymarker.lm != null) {
+		mymarker.lm.remove()
+		mymarker.lm = null
 	}
+
+	markerCtl.latlng = null
+	markerCtl.countries = []
 }
 
 mymap.on('click', (e) => {
-	clickPoint.move(e.latlng)
+	mymarker.move(e.latlng)
 	areaCtl.move(e.latlng)
 
 	reqwest({
@@ -249,7 +263,7 @@ mymap.on('click', (e) => {
 			areaCtl.setAvailable(data)
 		},
 		error: (e) => {
-			clickPoint.remove()
+			mymarker.remove()
 			areaCtl.clearSelection()
 		},
 	})

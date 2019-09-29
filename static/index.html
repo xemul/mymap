@@ -19,19 +19,20 @@
 <body>
 
 <div id="map"></div>
+<div id="sidebar">
+<div id="login">
+	{{status}}
+</div>
+<div id="marker">
+	<div v-if="latlng != null">
+		Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}<br>
+		Countries: {{countries}}<br>
+	</div>
+	<div v-if="latlng == null">
+		Click on the map
+	</div>
+</div>
 <div id="control">
-	<div id="login">
-		Not logged in
-	</div>
-	<div id="marker">
-		<div v-if="point != null">
-			Current position: {{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}<br>
-			Countries: {{pointCountries}}<br>
-		</div>
-		<div v-if="point == null">
-			Click on the map
-		</div>
-	</div>
 	<div id="available" v-if="availableAreas.length != 0">
 		<hr>Available
 			<small><a href="#" v-on:click="showTypes.toggle($event)">{{showTypes.text}}</a></small><br>
@@ -74,6 +75,7 @@
 			</li>
 		</ul>
 	</div>
+</div>
 </div>
 
 <script src="/config.js"></script>
