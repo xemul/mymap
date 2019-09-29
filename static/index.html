@@ -26,6 +26,7 @@
 	<div id="marker">
 		<div v-if="point != null">
 			Current position: {{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}<br>
+			Countries: {{pointCountries}}<br>
 		</div>
 		<div v-if="point == null">
 			Click on the map

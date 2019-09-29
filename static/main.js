@@ -9,6 +9,7 @@ function loadSelected() {
 			name: areaCtl.pointName,
 			lat: areaCtl.point.lat,
 			lng: areaCtl.point.lng,
+			countries: areaCtl.pointCountries,
 		}
 	}
 
@@ -75,6 +76,7 @@ var areaCtl = new Vue({
 	data: {
 		point: null,
 		pointName: "",
+		pointCountries: [],
 		availableAreas: [],
 		selectedAreas: [],
 		loadedAreas: {},
@@ -117,12 +119,16 @@ var areaCtl = new Vue({
 		clearSelection: () => {
 			areaCtl.point = null
 			areaCtl.pointName = ""
+			areaCtl.pointCountries = []
 			areaCtl.availableAreas = []
 			areaCtl.selectedAreas = []
 		},
 
 		setAvailable: (data) => {
 			let areas = []
+			let countries = []
+			let last = null
+
 			Object.keys(data).forEach((key, idx) => {
 				var area = data[key]
 				areas.push({
@@ -131,7 +137,12 @@ var areaCtl = new Vue({
 					state:	"loading",
 					type:	area.type,
 				})
+
+				last = area
 			})
+			if (last) {
+				last.countries.forEach((item, i) => { countries.push(item.code) })
+			}
 			areas.sort((a,b)=>{
 				if (a.type > b.type) {
 					return 1
@@ -142,6 +153,7 @@ var areaCtl = new Vue({
 				}
 			})
 			areaCtl.availableAreas = areas
+			areaCtl.pointCountries = countries
 		},
 	}
 })
