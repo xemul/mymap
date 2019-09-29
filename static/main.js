@@ -107,12 +107,29 @@ var areaCtl = new Vue({
 		},
 
 		addPoint: (pt) => {
-			areaCtl.$set(areaCtl.loadedPoints, pt.name, pt)
+			let bkey = pt.countries.join(',')
+			var bucket = areaCtl.loadedPoints[bkey]
+
+			if (!bucket) {
+				areaCtl.$set(areaCtl.loadedPoints, bkey, {})
+				bucket = areaCtl.loadedPoints[bkey]
+			}
+
+			Vue.set(bucket, pt.id, pt)
 			areaCtl.nrPoints += 1
+
+			console.log("-[lp]->", areaCtl.loadedPoints)
 		},
 
 		dropPoint: (pt) => {
-			areaCtl.$delete(areaCtl.loadedPoints, pt.name)
+			let bkey = pt.countries.join(',')
+			var bucket = areaCtl.loadedPoints[bkey]
+
+			Vue.delete(bucket, pt.id)
+
+			if (Object.keys(bucket).length == 0) {
+				areaCtl.$delete(areaCtl.loadedPoints, bkey)
+			}
 			areaCtl.nrPoints -= 1
 		},
 

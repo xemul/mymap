@@ -59,9 +59,14 @@
 	<div id="loadedPoints" v-if="nrPoints > 0">
 		<hr>Points <input checked="true" onclick="togglePoints()" type="checkbox"><br>
 		<ul>
-			<li v-for="pnt in loadedPoints">
-				{{pnt.name}} <small>({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</small>
-				<small><a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
+			<li v-for="(bkt, tag) in loadedPoints">
+				{{tag}} ({{Object.keys(bkt).length}})
+				<ul>
+				<li v-for="pnt in bkt">
+					{{pnt.name}} <small>({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</small>
+					<small><a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
+				</li>
+				</ul>
 			</li>
 		</ul>
 	</div>
