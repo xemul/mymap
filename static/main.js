@@ -61,15 +61,49 @@ function removePoint(ev, pnt) {
 	areaCtl.dropPoint(pnt)
 }
 
-function togglePoints() {
-	if (mypoints.visible) {
-		mymap.removeLayer(mypoints.loaded)
-		mypoints.visible = false
-	} else {
-		mymap.addLayer(mypoints.loaded)
-		mypoints.visible = true
+class toggle {
+	constructor(tOn, tOff, cb) {
+		this.on = tOn
+		this.off = tOff
+		this.reset()
+		this.cb = cb
+	}
+
+	toggle() {
+		if (this.state) {
+			this.state = false
+			this.text = this.off
+		} else {
+			this.state = true
+			this.text = this.on
+		}
+
+		if (this.cb != null) {
+			this.cb()
+		}
+	}
+
+	reset() {
+		this.state = false
+		this.text = this.off
 	}
 }
+
+var showTypesToggle = new toggle("less", "more")
+
+showTypesToggle.show = function(area) {
+	return showTypesToggle.state || area.type == "O02" || area.type == "O04"
+}
+
+var hidePointsToggle = new toggle("show", "hide",
+	function() {
+		if (!hidePointsToggle.state) {
+			mymap.addLayer(mypoints.loaded)
+		} else {
+			mymap.removeLayer(mypoints.loaded)
+		}
+	}
+)
 
 var areaCtl = new Vue({
 	el: '#control',
@@ -78,11 +112,13 @@ var areaCtl = new Vue({
 		pointName: "",
 		pointCountries: [],
 		availableAreas: [],
+		showTypes: showTypesToggle,
 		selectedAreas: [],
 		loadedAreas: {},
 		nrAreas: 0,
 		loadedPoints: {},
 		nrPoints: 0,
+		hidePoints: hidePointsToggle,
 	},
 	methods: {
 		move: (latlng) => {
@@ -139,6 +175,7 @@ var areaCtl = new Vue({
 			areaCtl.pointCountries = []
 			areaCtl.availableAreas = []
 			areaCtl.selectedAreas = []
+			areaCtl.showTypes.reset()
 		},
 
 		setAvailable: (data) => {
@@ -255,7 +292,6 @@ myareas.addArea = function(area) {
 
 var mypoints = mypoints || {}
 mypoints.loaded = L.layerGroup().addTo(mymap);
-mypoints.visible = true
 
 mypoints.addPoint = function(pt) {
 	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(mypoints.loaded)

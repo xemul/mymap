@@ -33,10 +33,13 @@
 		</div>
 	</div>
 	<div id="available" v-if="availableAreas.length != 0">
-		<hr>Available<br>
+		<hr>Available
+			<small><a href="#" v-on:click="showTypes.toggle($event)">{{showTypes.text}}</a></small><br>
 		<template v-for="area in availableAreas">
-			<input type="checkbox" v-bind:value="area" v-model="selectedAreas">
-			<label>{{area.name}} (<small>{{area.type}}</small>)</label><br>
+			<div v-if="showTypes.show(area)">
+				<input type="checkbox" v-bind:value="area" v-model="selectedAreas">
+				<label>{{area.name}} (<small>{{area.type}}</small>)</label><br>
+			</div>
 		</template>
 		<input v-model="pointName" placeholder="enter the point name">
 		<input value="Paint" onclick="loadSelected()" type="button">
@@ -57,7 +60,8 @@
 		</ul>
 	</div>
 	<div id="loadedPoints" v-if="nrPoints > 0">
-		<hr>Points <input checked="true" onclick="togglePoints()" type="checkbox"><br>
+		<hr>Points
+			<small><a href="#" v-on:click="hidePoints.toggle($event)">{{hidePoints.text}}</a></small><br>
 		<ul>
 			<li v-for="(bkt, tag) in loadedPoints">
 				{{tag}} ({{Object.keys(bkt).length}})
