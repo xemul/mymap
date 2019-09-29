@@ -58,7 +58,7 @@ function removePoint(ev, pnt) {
 	})
 
 	mypoints.loaded.removeLayer(pnt.marker)
-	areaCtl.dropPoint(pnt)
+	pointsCtl.dropPoint(pnt)
 }
 
 class toggle {
@@ -120,6 +120,42 @@ var markerCtl = new Vue({
 	},
 })
 
+var pointsCtl = new Vue({
+	el: '#points',
+	data: {
+		loaded: {},
+		nr: 0,
+		hide: hidePointsToggle,
+	},
+	methods: {
+		addPoint: (pt) => {
+			let bkey = pt.countries.join(',')
+			var bucket = pointsCtl.loaded[bkey]
+
+			if (!bucket) {
+				pointsCtl.$set(pointsCtl.loaded, bkey, {})
+				bucket = pointsCtl.loaded[bkey]
+			}
+
+			Vue.set(bucket, pt.id, pt)
+			pointsCtl.nr += 1
+		},
+
+		dropPoint: (pt) => {
+			let bkey = pt.countries.join(',')
+			var bucket = pointsCtl.loaded[bkey]
+
+			Vue.delete(bucket, pt.id)
+
+			if (Object.keys(bucket).length == 0) {
+				pointsCtl.$delete(pointsCtl.loaded, bkey)
+			}
+			pointsCtl.nr -= 1
+		},
+
+	},
+})
+
 var areaCtl = new Vue({
 	el: '#control',
 	data: {
@@ -129,9 +165,6 @@ var areaCtl = new Vue({
 		selectedAreas: [],
 		loadedAreas: {},
 		nrAreas: 0,
-		loadedPoints: {},
-		nrPoints: 0,
-		hidePoints: hidePointsToggle,
 	},
 	methods: {
 		move: (latlng) => {
@@ -152,33 +185,6 @@ var areaCtl = new Vue({
 		dropArea: (area) => {
 			areaCtl.$delete(areaCtl.loadedAreas, area.id)
 			areaCtl.nrAreas -= 1
-		},
-
-		addPoint: (pt) => {
-			let bkey = pt.countries.join(',')
-			var bucket = areaCtl.loadedPoints[bkey]
-
-			if (!bucket) {
-				areaCtl.$set(areaCtl.loadedPoints, bkey, {})
-				bucket = areaCtl.loadedPoints[bkey]
-			}
-
-			Vue.set(bucket, pt.id, pt)
-			areaCtl.nrPoints += 1
-
-			console.log("-[lp]->", areaCtl.loadedPoints)
-		},
-
-		dropPoint: (pt) => {
-			let bkey = pt.countries.join(',')
-			var bucket = areaCtl.loadedPoints[bkey]
-
-			Vue.delete(bucket, pt.id)
-
-			if (Object.keys(bucket).length == 0) {
-				areaCtl.$delete(areaCtl.loadedPoints, bkey)
-			}
-			areaCtl.nrPoints -= 1
 		},
 
 		clearSelection: () => {
@@ -239,6 +245,7 @@ mymarker.move = function(latlng) {
 	}
 	mymarker.lm = L.marker(latlng, {icon: pointIcon}).addTo(mymap);
 	markerCtl.latlng = latlng
+	markerCtl.countries = []
 }
 
 mymarker.remove = function() {
@@ -310,7 +317,7 @@ mypoints.loaded = L.layerGroup().addTo(mymap);
 mypoints.addPoint = function(pt) {
 	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(mypoints.loaded)
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
-	areaCtl.addPoint(pt)
+	pointsCtl.addPoint(pt)
 }
 
 reqwest({

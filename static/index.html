@@ -25,8 +25,7 @@
 </div>
 <div id="marker">
 	<div v-if="latlng != null">
-		Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}<br>
-		Countries: {{countries}}<br>
+		Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}} ({{countries.join(',')}})
 	</div>
 	<div v-if="latlng == null">
 		Click on the map
@@ -60,21 +59,21 @@
 			</li>
 		</ul>
 	</div>
-	<div id="loadedPoints" v-if="nrPoints > 0">
-		<hr>Points
-			<small><a href="#" v-on:click="hidePoints.toggle($event)">{{hidePoints.text}}</a></small><br>
-		<ul>
-			<li v-for="(bkt, tag) in loadedPoints">
-				{{tag}} ({{Object.keys(bkt).length}})
-				<ul>
-				<li v-for="pnt in bkt">
-					{{pnt.name}} <small>({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</small>
-					<small><a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
-				</li>
-				</ul>
+</div>
+<div id="points" v-if="nr > 0">
+	<hr>Points
+		<small><a href="#" v-on:click="hide.toggle($event)">{{hide.text}}</a></small><br>
+	<ul>
+		<li v-for="(bkt, tag) in loaded">
+			{{tag}} ({{Object.keys(bkt).length}})
+			<ul>
+			<li v-for="pnt in bkt">
+				{{pnt.name}} <small>({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</small>
+				<small><a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
 			</li>
-		</ul>
-	</div>
+			</ul>
+		</li>
+	</ul>
 </div>
 </div>
 
