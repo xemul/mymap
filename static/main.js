@@ -194,7 +194,7 @@ var areaCtl = new Vue({
 
 				last = area
 			})
-			if (last) {
+			if (last && last.countries) {
 				last.countries.forEach((item, i) => { countries.push(item.code) })
 			}
 			areas.sort((a,b)=>{
