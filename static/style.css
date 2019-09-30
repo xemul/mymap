@@ -5,7 +5,7 @@ body {
 }
 
 #map {
-  position: absolute;
+  position: fixed;
   top:0;
   left:0;
   margin:1%;
@@ -21,7 +21,7 @@ body {
 }
 
 #props {
-  position: absolute;
+  position: fixed;
   top: 32%;
   left: 0;
   width: 70%;
@@ -32,17 +32,9 @@ body {
   table-layout: fixed;
   border-collapse: collapse;
   margin: 1%;
-  border: 1px solid #73daff;
+  border: 1px solid #e0e8ff;
 }
 
 #proptable td {
   padding: 5px;
-}
-
-#proptable tr:nth-child(odd) {
-  background-color: #e0e8ff;
-}
-
-#proptable tr:nth-child(even) {
-  background-color: #ebf0ff;
 }
