@@ -1,12 +1,12 @@
 function loadSelected() {
 	var rq = {
-		areas: areaCtl.selectedAreas
+		areas: selectionCtl.selected
 	}
 
-	if (areaCtl.pointName) {
+	if (selectionCtl.pointName) {
 		rq.point = {
 			id: Math.floor(Math.random() * 1000000),
-			name: areaCtl.pointName,
+			name: selectionCtl.pointName,
 			lat: markerCtl.latlng.lat,
 			lng: markerCtl.latlng.lng,
 			countries: markerCtl.countries,
@@ -30,7 +30,7 @@ function loadSelected() {
 	}
 
 	mymarker.remove()
-	areaCtl.clearSelection()
+	selectionCtl.clearSelection()
 }
 
 function removeArea(ev, area) {
@@ -44,7 +44,7 @@ function removeArea(ev, area) {
 	})
 
 	myareas.loaded.removeLayer(area.layer)
-	areaCtl.dropArea(area)
+	areasCtl.dropArea(area)
 }
 
 function removePoint(ev, pnt) {
@@ -62,21 +62,15 @@ function removePoint(ev, pnt) {
 }
 
 class toggle {
-	constructor(tOn, tOff, cb) {
-		this.on = tOn
-		this.off = tOff
-		this.reset()
+	constructor(states, cb) {
+		this.states = states
 		this.cb = cb
+		this.reset()
 	}
 
 	toggle() {
-		if (this.state) {
-			this.state = false
-			this.text = this.off
-		} else {
-			this.state = true
-			this.text = this.on
-		}
+		this.i = (this.i + 1) % this.states.length
+		this.text = this.states[this.i]
 
 		if (this.cb != null) {
 			this.cb()
@@ -84,20 +78,20 @@ class toggle {
 	}
 
 	reset() {
-		this.state = false
-		this.text = this.off
+		this.i = 0
+		this.text = this.states[0]
 	}
 }
 
-var showTypesToggle = new toggle("less", "more")
+var showTypesToggle = new toggle(["more", "less"])
 
 showTypesToggle.show = function(area) {
-	return showTypesToggle.state || area.type == "O02" || area.type == "O04"
+	return showTypesToggle.i == 1 || area.type == "O02" || area.type == "O04"
 }
 
-var hidePointsToggle = new toggle("show", "hide",
+var hidePointsToggle = new toggle(["hide", "show"],
 	function() {
-		if (!hidePointsToggle.state) {
+		if (hidePointsToggle.i == 0) {
 			mymap.addLayer(mypoints.loaded)
 		} else {
 			mymap.removeLayer(mypoints.loaded)
@@ -156,42 +150,51 @@ var pointsCtl = new Vue({
 	},
 })
 
-var areaCtl = new Vue({
-	el: '#control',
+var areasCtl = new Vue({
+	el: '#areas',
 	data: {
-		pointName: "",
-		availableAreas: [],
-		showTypes: showTypesToggle,
-		selectedAreas: [],
-		loadedAreas: {},
-		nrAreas: 0,
+		loaded: {},
+		nr: 0,
 	},
 	methods: {
-		move: (latlng) => {
-			areaCtl.clearSelection()
-		},
-
 		addArea: (area) => {
-			areaCtl.$set(areaCtl.loadedAreas, area.id, area)
-			areaCtl.nrAreas += 1
+			areasCtl.$set(areasCtl.loaded, area.id, area)
+			areasCtl.nr += 1
 		},
 
 		updateArea: (area, layer) => {
 			area.state = "ready"
 			area.layer = layer
-			areaCtl.$set(areaCtl.loadedAreas, area.id, area)
+			areasCtl.$set(areasCtl.loaded, area.id, area)
 		},
 
 		dropArea: (area) => {
-			areaCtl.$delete(areaCtl.loadedAreas, area.id)
-			areaCtl.nrAreas -= 1
+			areasCtl.$delete(areasCtl.loaded, area.id)
+			areasCtl.nr -= 1
+		},
+
+	},
+})
+
+var selectionCtl = new Vue({
+	el: '#selection',
+	data: {
+		available: [],
+		selected: [],
+		pointName: "",
+
+		show: showTypesToggle,
+	},
+	methods: {
+		move: (latlng) => {
+			selectionCtl.clearSelection()
 		},
 
 		clearSelection: () => {
-			areaCtl.pointName = ""
-			areaCtl.availableAreas = []
-			areaCtl.selectedAreas = []
-			areaCtl.showTypes.reset()
+			selectionCtl.pointName = ""
+			selectionCtl.available = []
+			selectionCtl.selected = []
+			selectionCtl.show.reset()
 		},
 
 		setAvailable: (data) => {
@@ -222,7 +225,8 @@ var areaCtl = new Vue({
 					return 0
 				}
 			})
-			areaCtl.availableAreas = areas
+
+			selectionCtl.available = areas
 			markerCtl.countries = countries
 		},
 	}
@@ -260,18 +264,18 @@ mymarker.remove = function() {
 
 mymap.on('click', (e) => {
 	mymarker.move(e.latlng)
-	areaCtl.move(e.latlng)
+	selectionCtl.move(e.latlng)
 
 	reqwest({
 		url: 'https://global.mapit.mysociety.org/point/4326/'+e.latlng.lng+','+e.latlng.lat,
 		method: 'GET',
 		crossOrigin: true,
 		success: (data) => {
-			areaCtl.setAvailable(data)
+			selectionCtl.setAvailable(data)
 		},
 		error: (e) => {
 			mymarker.remove()
-			areaCtl.clearSelection()
+			selectionCtl.clearSelection()
 		},
 	})
 })
@@ -291,15 +295,15 @@ myareas.area_loaded = function(data) {
 	});
 
 	myareas.loaded.addLayer(area)
-	areaCtl.updateArea(this.area, L.stamp(area))
+	areasCtl.updateArea(this.area, L.stamp(area))
 
 	console.log("Loaded " + this.area.name)
 };
 
 myareas.addArea = function(area) {
-	if (!areaCtl.loadedAreas[area.id]) {
+	if (!areasCtl.loaded[area.id]) {
 		console.log("Requesting ", area.name);
-		areaCtl.addArea(area)
+		areasCtl.addArea(area)
 
 		reqwest({
 			url: 'https://global.mapit.mysociety.org/area/' + area.id + '.geojson?simplify_tolerance=0.0001',

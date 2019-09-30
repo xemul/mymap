@@ -31,34 +31,32 @@
 		Click on the map
 	</div>
 </div>
-<div id="control">
-	<div id="available" v-if="availableAreas.length != 0">
-		<hr>Available
-			<small><a href="#" v-on:click="showTypes.toggle($event)">{{showTypes.text}}</a></small><br>
-		<template v-for="area in availableAreas">
-			<div v-if="showTypes.show(area)">
-				<input type="checkbox" v-bind:value="area" v-model="selectedAreas">
-				<label>{{area.name}} (<small>{{area.type}}</small>)</label><br>
+<div id="selection" v-if="available.length != 0">
+	<hr>Available
+		<small><a href="#" v-on:click="show.toggle($event)">{{show.text}}</a></small><br>
+	<template v-for="area in available">
+		<div v-if="show.show(area)">
+			<input type="checkbox" v-bind:value="area" v-model="selected">
+			<label>{{area.name}} (<small>{{area.type}}</small>)</label><br>
+		</div>
+	</template>
+	<input v-model="pointName" placeholder="enter the point name">
+	<input value="Paint" onclick="loadSelected()" type="button">
+</div>
+<div id="areas" v-if="nr > 0">
+	<hr>Areas<br>
+	<ul>
+		<li v-for="area in loaded">
+			<div v-if="area.state != 'ready'">
+				{{area.name}}
+				<small>{{area.state}}...</small>
 			</div>
-		</template>
-		<input v-model="pointName" placeholder="enter the point name">
-		<input value="Paint" onclick="loadSelected()" type="button">
-	</div>
-	<div id="loadedAreas" v-if="nrAreas > 0">
-		<hr>Areas<br>
-		<ul>
-			<li v-for="area in loadedAreas">
-				<div v-if="area.state != 'ready'">
-					{{area.name}}
-					<small>{{area.state}}...</small>
-				</div>
-				<div v-if="area.state == 'ready'">
-					{{area.name}}
-					<small><a href="#" v-on:click="removeArea($event, area)">(remove)</a></small>
-				</div>
-			</li>
-		</ul>
-	</div>
+			<div v-if="area.state == 'ready'">
+				{{area.name}}
+				<small><a href="#" v-on:click="removeArea($event, area)">(remove)</a></small>
+			</div>
+		</li>
+	</ul>
 </div>
 <div id="points" v-if="nr > 0">
 	<hr>Points
