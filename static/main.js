@@ -9,7 +9,8 @@ function loadSelected() {
 			name: selectionCtl.pointName,
 			lat: markerCtl.latlng.lat,
 			lng: markerCtl.latlng.lng,
-			countries: markerCtl.countries,
+			countries: markerCtl.inside.countries,
+			area: markerCtl.inside.area,
 		}
 	}
 
@@ -132,8 +133,7 @@ var selectionCtl = new Vue({
 
 		setAvailable: (data) => {
 			let areas = []
-			let countries = []
-			let last = null
+			let smallest = null
 
 			Object.keys(data).forEach((key, idx) => {
 				var area = data[key]
@@ -144,11 +144,10 @@ var selectionCtl = new Vue({
 					type:	area.type,
 				})
 
-				last = area
+				if (smallest == null || smallest.type > area.type) {
+					smallest = area
+				}
 			})
-			if (last && last.countries) {
-				last.countries.forEach((item, i) => { countries.push(item.code) })
-			}
 			areas.sort((a,b)=>{
 				if (a.type > b.type) {
 					return 1
@@ -159,8 +158,16 @@ var selectionCtl = new Vue({
 				}
 			})
 
+			let inside = { countries: [] }
+			if (smallest) {
+				if (smallest.countries) {
+					smallest.countries.forEach((item, i) => { inside.countries.push(item.code) })
+				}
+				inside.area = smallest.id
+			}
+
 			selectionCtl.available = areas
-			markerCtl.countries = countries
+			markerCtl.inside = inside
 		},
 	}
 })
@@ -204,7 +211,7 @@ markerLayer.move = function(latlng) {
 	}
 	markerLayer.lm = L.marker(latlng, {icon: pointIcon}).addTo(mymap);
 	markerCtl.latlng = latlng
-	markerCtl.countries = []
+	markerCtl.inside = null
 }
 
 markerLayer.remove = function() {
@@ -214,14 +221,14 @@ markerLayer.remove = function() {
 	}
 
 	markerCtl.latlng = null
-	markerCtl.countries = []
+	markerCtl.inside = null
 }
 
 var markerCtl = new Vue({
 	el: '#marker',
 	data: {
 		latlng: null,
-		countries: [],
+		inside: [],
 	},
 })
 

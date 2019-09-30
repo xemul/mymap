@@ -25,7 +25,8 @@
 </div>
 <div id="marker">
 	<div v-if="latlng != null">
-		Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}} ({{countries.join(',')}})
+		Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
+		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
 	</div>
 	<div v-if="latlng == null">
 		Click on the map
@@ -37,7 +38,7 @@
 	<template v-for="area in available">
 		<div v-if="show.show(area)">
 			<input type="checkbox" v-bind:value="area" v-model="selected">
-			<label>{{area.name}} (<small>{{area.type}}</small>)</label><br>
+			<label>{{area.name}} <small>({{area.type}})</small></label><br>
 		</div>
 	</template>
 	<input v-model="pointName" placeholder="enter the point name">
@@ -63,7 +64,7 @@
 		<small><a href="#" v-on:click="hide.toggle($event)">{{hide.text}}</a></small><br>
 	<ul>
 		<li v-for="(bkt, tag) in loaded">
-			{{tag}} ({{Object.keys(bkt).length}})
+			{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
 			<ul>
 			<li v-for="pnt in bkt">
 				{{pnt.name}} <small>({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</small>
