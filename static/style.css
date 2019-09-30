@@ -8,15 +8,41 @@ body {
   position: absolute;
   top:0;
   left:0;
-  margin:2%;
+  margin:1%;
   width:70%;
-  height:90%;
 }
 
 #sidebar {
   position: absolute;
   top:0;
   right:0;
-  margin:2%;
+  margin:1%;
   width:25%;
+}
+
+#props {
+  position: absolute;
+  top: 32%;
+  left: 0;
+  width: 70%;
+  margin: 1%;
+}
+
+#proptable {
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin: 1%;
+  border: 1px solid #73daff;
+}
+
+#proptable td {
+  padding: 5px;
+}
+
+#proptable tr:nth-child(odd) {
+  background-color: #e0e8ff;
+}
+
+#proptable tr:nth-child(even) {
+  background-color: #ebf0ff;
 }

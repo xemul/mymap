@@ -18,19 +18,31 @@
 </head>
 <body>
 
-<div id="map"></div>
+<div id="map" v-bind:style="{height: height}"></div>
+<div id="props">
+	<div v-if="point != null">
+		{{point.name}}
+		<small><a href="#" v-on:click="clearProps($event)">(close)</a></small><br>
+		<table id="proptable">
+		<tr><td>Id</td><td>{{point.id}}</td></tr>
+		<tr><td>Coord</td><td>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</td></tr>
+		<tr><td>Area</td><td>{{point.area}}</td></tr>
+		<tr><td>Countries</td><td>{{point.countries.join(",")}}</td></tr>
+		</table>
+	</div>
+</div>
 <div id="sidebar">
 <div id="login">
 	{{status}}
 </div>
 <div id="marker">
+	<div v-if="latlng == null">
+		Click on the map
+	</div>
 	<div v-if="latlng != null">
 		Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
 		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})
 			<a href="#" v-on:click="clearMarker($event)">(clear)</a></small>
-	</div>
-	<div v-if="latlng == null">
-		Click on the map
 	</div>
 </div>
 <div id="selection" v-if="available.length != 0">
@@ -54,8 +66,7 @@
 			<ul>
 			<li v-for="pnt in bkt">
 				{{pnt.name}} <small>
-					<a href="#" v-on:click="highlightPoint($event, pnt)">
-						({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</a>
+					<a href="#" v-on:click="highlightPoint($event, pnt)">(locate)</a>
 					<a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
 			</li>
 			</ul>

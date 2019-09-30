@@ -183,6 +183,24 @@ var selectionCtl = new Vue({
 	}
 })
 
+var mapCtl = new Vue({
+	el: '#map',
+	data: {
+		height: "90%",
+	},
+	methods: {
+		resize: (newh, pt) => {
+			mapCtl.height = newh
+			Vue.nextTick(() => {
+				mymap.invalidateSize()
+				if (pt != null) {
+					highlightPoint(null, pt)
+				}
+			})
+		}
+	},
+})
+
 var mymap = L.map('map').setView(startAt, 5);
 
 var osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -255,7 +273,7 @@ areasLayer.area_loaded = function(data) {
 		"color": areaColor,
 	};
 	var area = new L.GeoJSON(data, { style: style });
-	area.on('dblclick', function(e){
+	area.on('dblclick', function(e) {
 	    var z = mymap.getZoom() + (e.originalEvent.shiftKey ? -1 : 1);
 	    mymap.setZoomAround(e.containerPoint, z);
 	});
@@ -317,6 +335,10 @@ pointsLayer.loaded = L.layerGroup().addTo(mymap);
 pointsLayer.addPoint = function(pt) {
 	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(pointsLayer.loaded)
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
+	pt.marker.on('click', function(e) {
+		propsCtl.show(pt)
+		mapCtl.resize("30%", pt)
+	})
 	pointsCtl.addPoint(pt)
 }
 
@@ -354,6 +376,31 @@ var pointsCtl = new Vue({
 		},
 
 	},
+})
+
+//
+// Props
+//
+
+function clearProps(e) {
+	propsCtl.clear()
+	mapCtl.resize("90%", null)
+}
+
+var propsCtl = new Vue({
+	el: '#props',
+	data: {
+		point: null,
+	},
+	methods: {
+		clear: () => {
+			propsCtl.point = null
+		},
+
+		show: (pt) => {
+			propsCtl.point = pt
+		},
+	}
 })
 
 //
