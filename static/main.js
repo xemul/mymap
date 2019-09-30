@@ -62,6 +62,11 @@ function removePoint(ev, pnt) {
 	pointsCtl.dropPoint(pnt)
 }
 
+function clearMarker(ev) {
+	markerLayer.remove()
+	selectionCtl.clearSelection()
+}
+
 class toggle {
 	constructor(states, cb) {
 		this.states = states
@@ -192,8 +197,7 @@ mymap.on('click', (e) => {
 			selectionCtl.setAvailable(data)
 		},
 		error: (e) => {
-			markerLayer.remove()
-			selectionCtl.clearSelection()
+			clearMarker()
 		},
 	})
 })

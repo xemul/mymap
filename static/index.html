@@ -26,7 +26,8 @@
 <div id="marker">
 	<div v-if="latlng != null">
 		Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
-		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
+		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})
+			<a href="#" v-on:click="clearMarker($event)">(clear)</a></small>
 	</div>
 	<div v-if="latlng == null">
 		Click on the map
