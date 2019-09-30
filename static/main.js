@@ -62,6 +62,12 @@ function removePoint(ev, pnt) {
 	pointsCtl.dropPoint(pnt)
 }
 
+function highlightPoint(ev, pnt) {
+	mymap.setView(pnt, highlightZoom)
+	pnt.marker.setIcon(placeDIcon)
+	setTimeout(() => { pnt.marker.setIcon(placeIcon) }, highlightTimeout)
+}
+
 function clearMarker(ev) {
 	markerLayer.remove()
 	selectionCtl.clearSelection()

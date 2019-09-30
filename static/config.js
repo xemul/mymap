@@ -16,3 +16,11 @@ const placeIcon = L.icon({
 	iconAnchor:	[ 7, 20],
 })
 
+const placeDIcon = L.icon({
+	iconUrl:	'img/place-d.svg',
+	iconSize:	[16, 24],
+	iconAnchor:	[ 8, 23],
+})
+
+const highlightTimeout = 1000
+const highlightZoom = 7

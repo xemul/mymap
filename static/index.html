@@ -68,8 +68,10 @@
 			{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
 			<ul>
 			<li v-for="pnt in bkt">
-				{{pnt.name}} <small>({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</small>
-				<small><a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
+				{{pnt.name}} <small>
+					<a href="#" v-on:click="highlightPoint($event, pnt)">
+						({{pnt.lat.toFixed(4)}} / {{pnt.lng.toFixed(4)}})</a>
+					<a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
 			</li>
 			</ul>
 		</li>
