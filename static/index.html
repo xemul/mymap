@@ -45,21 +45,6 @@
 	<input v-model="pointName" placeholder="enter the point name">
 	<input value="Paint" onclick="loadSelected()" type="button">
 </div>
-<div id="areas" v-if="nr > 0">
-	<hr>Areas<br>
-	<ul>
-		<li v-for="area in loaded">
-			<div v-if="area.state != 'ready'">
-				{{area.name}}
-				<small>{{area.state}}...</small>
-			</div>
-			<div v-if="area.state == 'ready'">
-				{{area.name}}
-				<small><a href="#" v-on:click="removeArea($event, area)">(remove)</a></small>
-			</div>
-		</li>
-	</ul>
-</div>
 <div id="points" v-if="nr > 0">
 	<hr>Points
 		<small><a href="#" v-on:click="hide.toggle($event)">{{hide.text}}</a></small><br>
@@ -74,6 +59,21 @@
 					<a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
 			</li>
 			</ul>
+		</li>
+	</ul>
+</div>
+<div id="areas" v-if="nr > 0">
+	<hr>Areas<br>
+	<ul>
+		<li v-for="area in loaded">
+			<div v-if="area.state != 'ready'">
+				{{area.name}}
+				<small>{{area.state}}...</small>
+			</div>
+			<div v-if="area.state == 'ready'">
+				{{area.name}}
+				<small><a href="#" v-on:click="removeArea($event, area)">(remove)</a></small>
+			</div>
 		</li>
 	</ul>
 </div>
