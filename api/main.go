@@ -10,7 +10,7 @@ import (
 )
 
 func handleListGeos(w http.ResponseWriter, r *http.Request) {
-	load, err := storage.Load()
+	load, err := storage.LoadGeos()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -21,7 +21,7 @@ func handleListGeos(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSaveGeos(w http.ResponseWriter, r *http.Request) {
-	var sv SaveReq
+	var sv SavePointReq
 
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&sv)
@@ -30,7 +30,7 @@ func handleSaveGeos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = storage.Save(&sv)
+	err = storage.SavePoint(&sv)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -52,7 +52,7 @@ func handleForgetGeos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := storage.Remove(areaId, typ[0])
+	ok, err := storage.RemoveGeo(areaId, typ[0])
 	if err != nil {
 		if ok {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -75,9 +75,33 @@ func handleGeos(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleListVisits(w http.ResponseWriter, r *http.Request, id int) {
+	http.Error(w, "", http.StatusInternalServerError)
+}
+
+func handleSaveVisits(w http.ResponseWriter, r *http.Request, id int) {
+	http.Error(w, "", http.StatusInternalServerError)
+}
+
+func handleVisits(w http.ResponseWriter, r *http.Request) {
+	ptId, err := strconv.Atoi(r.URL.Query()["id"][0])
+	if err != nil {
+		http.Error(w, "id must be integer", http.StatusBadRequest)
+		return
+	}
+
+	switch r.Method {
+	case "GET":
+		handleListVisits(w, r, ptId)
+	case "POST":
+		handleSaveVisits(w, r, ptId)
+	}
+}
+
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/geos", handleGeos).Methods("GET", "POST", "DELETE", "OPTIONS")
+	r.HandleFunc("/visits", handleVisits).Methods("GET", "POST", "OPTIONS")
 
 	headersOk := handlers.AllowedHeaders([]string{"Content-Type"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})

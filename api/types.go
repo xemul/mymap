@@ -15,12 +15,12 @@ type Point struct {
 	Countries	[]string		`json:"countries"`
 }
 
-type SaveReq struct {
+type SavePointReq struct {
 	Point		*Point			`json:"point,omitempty"`
 	Areas		[]*Area			`json:"areas"`
 }
 
-type LoadResp struct {
+type LoadGeosResp struct {
 	Points		[]*Point		`json:"points"`
 	Areas		[]*Area			`json:"areas"`
 }

@@ -1,9 +1,9 @@
 package main
 
 type Storage interface {
-	Save(*SaveReq) error
-	Load() (*LoadResp, error)
-	Remove(int, string) (bool, error)
+	SavePoint(*SavePointReq) error
+	LoadGeos() (*LoadGeosResp, error)
+	RemoveGeo(int, string) (bool, error)
 }
 
 var storage = &LocalJsonStorage{}

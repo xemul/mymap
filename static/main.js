@@ -391,17 +391,50 @@ var propsCtl = new Vue({
 	el: '#props',
 	data: {
 		point: null,
+		visited: [],
+		newVisit: "",
 	},
 	methods: {
 		clear: () => {
 			propsCtl.point = null
+			propsCtl.visited = []
+			propsCtl.newVisit = ""
 		},
 
 		show: (pt) => {
 			propsCtl.point = pt
+			reqwest({
+				url: apiserver + '/visits?id=' + pt.id,
+				method: 'GET',
+				type: 'json',
+				crossOrigin: true,
+				success: (data) => {
+					propsCtl.visited = data
+				},
+			})
+		},
+
+		commit: () => {
+			let nv = { date: propsCtl.newVisit }
+
+			reqwest({
+				url: apiserver + '/visits?id=' + propsCtl.point.id,
+				method: 'POST',
+				contentType: 'application/json',
+				data: JSON.stringify(nv),
+				crossOrigin: true,
+				success: (data) => {
+				},
+			})
+
+			propsCtl.visited.push(nv)
 		},
 	}
 })
+
+function addVisit() {
+	propsCtl.commit()
+}
 
 //
 // On-load

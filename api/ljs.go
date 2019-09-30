@@ -15,7 +15,7 @@ type LocalJsonStorage struct {
 	lock	sync.RWMutex
 }
 
-func (s *LocalJsonStorage)Save(sv *SaveReq) error {
+func (s *LocalJsonStorage)SavePoint(sv *SavePointReq) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -54,7 +54,7 @@ func (s *LocalJsonStorage)Save(sv *SaveReq) error {
 	return s.saveToFile(f)
 }
 
-func (s *LocalJsonStorage)Load() (*LoadResp, error) {
+func (s *LocalJsonStorage)LoadGeos() (*LoadGeosResp, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -63,7 +63,7 @@ func (s *LocalJsonStorage)Load() (*LoadResp, error) {
 		return nil, err
 	}
 
-	var ret LoadResp
+	var ret LoadGeosResp
 	for _, area := range f.Areas {
 		ret.Areas = append(ret.Areas, &area.Area)
 	}
@@ -75,7 +75,7 @@ func (s *LocalJsonStorage)Load() (*LoadResp, error) {
 	return &ret, nil
 }
 
-func (s *LocalJsonStorage)Remove(id int, typ string) (bool, error) {
+func (s *LocalJsonStorage)RemoveGeo(id int, typ string) (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 

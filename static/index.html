@@ -21,14 +21,24 @@
 <div id="map" v-bind:style="{height: height}"></div>
 <div id="props">
 	<div v-if="point != null">
-		{{point.name}}
-		<small><a href="#" v-on:click="clearProps($event)">(close)</a></small><br>
-		<table id="proptable">
-		<tr><td>Id</td><td>{{point.id}}</td></tr>
-		<tr><td>Coord</td><td>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</td></tr>
-		<tr><td>Area</td><td>{{point.area}}</td></tr>
-		<tr><td>Countries</td><td>{{point.countries.join(",")}}</td></tr>
-		</table>
+		<div id="summary">
+			{{point.name}}
+			<small><a href="#" v-on:click="clearProps($event)">(close)</a></small><br>
+			<table id="sumtable">
+			<tr><td>Id</td><td>{{point.id}}</td></tr>
+			<tr><td>Coord</td><td>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</td></tr>
+			<tr><td>Area</td><td>{{point.area}}</td></tr>
+			<tr><td>Countries</td><td>{{point.countries.join(",")}}</td></tr>
+			</table>
+		</div>
+		<div id="visits">
+			Visited<br>
+			<table id="visitable">
+			<tr v-for="vis in visited"><td>{{vis.date}}</td></tr>
+			</table>
+			<input v-model="newVisit" placeholder="dd/mm/yyy">
+			<input value="+" onclick="addVisit()" type="button">
+		</div>
 	</div>
 </div>
 <div id="sidebar">

@@ -8,7 +8,7 @@ body {
   position: fixed;
   top:0;
   left:0;
-  margin:1%;
+  margin:5px;
   width:70%;
 }
 
@@ -16,7 +16,7 @@ body {
   position: absolute;
   top:0;
   right:0;
-  margin:1%;
+  margin:5px;
   width:25%;
 }
 
@@ -25,16 +25,41 @@ body {
   top: 32%;
   left: 0;
   width: 70%;
-  margin: 1%;
+  margin: 5px;
 }
 
-#proptable {
+#summary {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 25%;
+}
+
+#sumtable {
   table-layout: fixed;
   border-collapse: collapse;
-  margin: 1%;
   border: 1px solid #e0e8ff;
+  margin: 5px;
 }
 
-#proptable td {
+#sumtable td {
+  padding: 5px;
+}
+
+#visits {
+  position: absolute;
+  top: 0;
+  left: 25%;
+  width: 80%;
+}
+
+#visitable {
+  table-layout: fixed;
+  border-collapse: collapse;
+  border: 1px solid #e0e8ff;
+  margin: 5px;
+}
+
+#visitable td {
   padding: 5px;
 }
