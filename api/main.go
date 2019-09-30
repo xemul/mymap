@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/handlers"
 )
 
-func handleListVisited(w http.ResponseWriter, r *http.Request) {
+func handleListGeos(w http.ResponseWriter, r *http.Request) {
 	load, err := storage.Load()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -20,7 +20,7 @@ func handleListVisited(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(load)
 }
 
-func handleSaveVisited(w http.ResponseWriter, r *http.Request) {
+func handleSaveGeos(w http.ResponseWriter, r *http.Request) {
 	var sv SaveReq
 
 	defer r.Body.Close()
@@ -39,7 +39,7 @@ func handleSaveVisited(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleForgetVisited(w http.ResponseWriter, r *http.Request) {
+func handleForgetGeos(w http.ResponseWriter, r *http.Request) {
 	areaId, err := strconv.Atoi(r.URL.Query()["id"][0])
 	if err != nil {
 		http.Error(w, "id must be integer", http.StatusBadRequest)
@@ -64,20 +64,20 @@ func handleForgetVisited(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handleVisited(w http.ResponseWriter, r *http.Request) {
+func handleGeos(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		handleListVisited(w, r)
+		handleListGeos(w, r)
 	case "POST":
-		handleSaveVisited(w, r)
+		handleSaveGeos(w, r)
 	case "DELETE":
-		handleForgetVisited(w, r)
+		handleForgetGeos(w, r)
 	}
 }
 
 func main() {
 	r := mux.NewRouter()
-	r.HandleFunc("/visited", handleVisited).Methods("GET", "POST", "DELETE", "OPTIONS")
+	r.HandleFunc("/geos", handleGeos).Methods("GET", "POST", "DELETE", "OPTIONS")
 
 	headersOk := handlers.AllowedHeaders([]string{"Content-Type"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})

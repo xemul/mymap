@@ -15,7 +15,7 @@ function loadSelected() {
 	}
 
 	reqwest({
-		url: apiserver + '/visited',
+		url: apiserver + '/geos',
 		method: 'POST',
 		contentType: 'application/json',
 		data: JSON.stringify(rq),
@@ -36,7 +36,7 @@ function loadSelected() {
 
 function removeArea(ev, area) {
 	reqwest({
-			url: apiserver + '/visited?type=area&id=' + area.id,
+			url: apiserver + '/geos?type=area&id=' + area.id,
 			method: 'DELETE',
 			crossOrigin: true,
 			success: (x) => {
@@ -50,7 +50,7 @@ function removeArea(ev, area) {
 
 function removePoint(ev, pnt) {
 	reqwest({
-			url: apiserver + '/visited?type=point&id=' + pnt.id,
+			url: apiserver + '/geos?type=point&id=' + pnt.id,
 			method: 'DELETE',
 			crossOrigin: true,
 			success: (x) => {
@@ -361,7 +361,7 @@ var pointsCtl = new Vue({
 //
 
 reqwest({
-		url: apiserver + '/visited',
+		url: apiserver + '/geos',
 		method: 'GET',
 		type: 'json',
 		crossOrigin: true,
