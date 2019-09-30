@@ -24,12 +24,12 @@ function loadSelected() {
 		},
 	})
 
-	rq.areas.forEach((item, i) => { myareas.addArea(item) })
+	rq.areas.forEach((item, i) => { areasLayer.addArea(item) })
 	if (rq.point) {
-		mypoints.addPoint(rq.point)
+		pointsLayer.addPoint(rq.point)
 	}
 
-	mymarker.remove()
+	markerLayer.remove()
 	selectionCtl.clearSelection()
 }
 
@@ -43,7 +43,7 @@ function removeArea(ev, area) {
 			},
 	})
 
-	myareas.loaded.removeLayer(area.layer)
+	areasLayer.loaded.removeLayer(area.layer)
 	areasCtl.dropArea(area)
 }
 
@@ -57,7 +57,7 @@ function removePoint(ev, pnt) {
 			},
 	})
 
-	mypoints.loaded.removeLayer(pnt.marker)
+	pointsLayer.loaded.removeLayer(pnt.marker)
 	pointsCtl.dropPoint(pnt)
 }
 
@@ -92,87 +92,21 @@ showTypesToggle.show = function(area) {
 var hidePointsToggle = new toggle(["hide", "show"],
 	function() {
 		if (hidePointsToggle.i == 0) {
-			mymap.addLayer(mypoints.loaded)
+			mymap.addLayer(pointsLayer.loaded)
 		} else {
-			mymap.removeLayer(mypoints.loaded)
+			mymap.removeLayer(pointsLayer.loaded)
 		}
 	}
 )
+
+//
+// Sidebar stuff
+//
 
 var loginCtl = new Vue({
 	el: '#login',
 	data: {
 		status: "Not logged in",
-	},
-})
-
-var markerCtl = new Vue({
-	el: '#marker',
-	data: {
-		latlng: null,
-		countries: [],
-	},
-})
-
-var pointsCtl = new Vue({
-	el: '#points',
-	data: {
-		loaded: {},
-		nr: 0,
-		hide: hidePointsToggle,
-	},
-	methods: {
-		addPoint: (pt) => {
-			let bkey = pt.countries.join(',')
-			var bucket = pointsCtl.loaded[bkey]
-
-			if (!bucket) {
-				pointsCtl.$set(pointsCtl.loaded, bkey, {})
-				bucket = pointsCtl.loaded[bkey]
-			}
-
-			Vue.set(bucket, pt.id, pt)
-			pointsCtl.nr += 1
-		},
-
-		dropPoint: (pt) => {
-			let bkey = pt.countries.join(',')
-			var bucket = pointsCtl.loaded[bkey]
-
-			Vue.delete(bucket, pt.id)
-
-			if (Object.keys(bucket).length == 0) {
-				pointsCtl.$delete(pointsCtl.loaded, bkey)
-			}
-			pointsCtl.nr -= 1
-		},
-
-	},
-})
-
-var areasCtl = new Vue({
-	el: '#areas',
-	data: {
-		loaded: {},
-		nr: 0,
-	},
-	methods: {
-		addArea: (area) => {
-			areasCtl.$set(areasCtl.loaded, area.id, area)
-			areasCtl.nr += 1
-		},
-
-		updateArea: (area, layer) => {
-			area.state = "ready"
-			area.layer = layer
-			areasCtl.$set(areasCtl.loaded, area.id, area)
-		},
-
-		dropArea: (area) => {
-			areasCtl.$delete(areasCtl.loaded, area.id)
-			areasCtl.nr -= 1
-		},
-
 	},
 })
 
@@ -194,7 +128,6 @@ var selectionCtl = new Vue({
 			selectionCtl.pointName = ""
 			selectionCtl.available = []
 			selectionCtl.selected = []
-			selectionCtl.show.reset()
 		},
 
 		setAvailable: (data) => {
@@ -232,7 +165,7 @@ var selectionCtl = new Vue({
 	}
 })
 
-var mymap = L.map('map').setView([53.505, 25.09], 5);
+var mymap = L.map('map').setView(startAt, 5);
 
 var osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 	attribution: 'Map © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -240,30 +173,8 @@ var osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
     });
 mymap.addLayer(osm);
 
-var mymarker = mymarker || {}
-mymarker.lm = null
-
-mymarker.move = function(latlng) {
-	if (mymarker.lm != null) {
-		mymarker.lm.remove()
-	}
-	mymarker.lm = L.marker(latlng, {icon: pointIcon}).addTo(mymap);
-	markerCtl.latlng = latlng
-	markerCtl.countries = []
-}
-
-mymarker.remove = function() {
-	if (mymarker.lm != null) {
-		mymarker.lm.remove()
-		mymarker.lm = null
-	}
-
-	markerCtl.latlng = null
-	markerCtl.countries = []
-}
-
 mymap.on('click', (e) => {
-	mymarker.move(e.latlng)
+	markerLayer.move(e.latlng)
 	selectionCtl.move(e.latlng)
 
 	reqwest({
@@ -274,16 +185,54 @@ mymap.on('click', (e) => {
 			selectionCtl.setAvailable(data)
 		},
 		error: (e) => {
-			mymarker.remove()
+			markerLayer.remove()
 			selectionCtl.clearSelection()
 		},
 	})
 })
 
-var myareas = myareas || {};
-myareas.loaded = L.featureGroup().addTo(mymap);
+//
+// Marker
+//
 
-myareas.area_loaded = function(data) {
+var markerLayer = markerLayer || {}
+markerLayer.lm = null
+
+markerLayer.move = function(latlng) {
+	if (markerLayer.lm != null) {
+		markerLayer.lm.remove()
+	}
+	markerLayer.lm = L.marker(latlng, {icon: pointIcon}).addTo(mymap);
+	markerCtl.latlng = latlng
+	markerCtl.countries = []
+}
+
+markerLayer.remove = function() {
+	if (markerLayer.lm != null) {
+		markerLayer.lm.remove()
+		markerLayer.lm = null
+	}
+
+	markerCtl.latlng = null
+	markerCtl.countries = []
+}
+
+var markerCtl = new Vue({
+	el: '#marker',
+	data: {
+		latlng: null,
+		countries: [],
+	},
+})
+
+//
+// Areas
+//
+
+var areasLayer = areasLayer || {};
+areasLayer.loaded = L.featureGroup().addTo(mymap);
+
+areasLayer.area_loaded = function(data) {
 	var style = {
 		"weight": 0.01,
 		"color": areaColor,
@@ -294,13 +243,13 @@ myareas.area_loaded = function(data) {
 	    mymap.setZoomAround(e.containerPoint, z);
 	});
 
-	myareas.loaded.addLayer(area)
+	areasLayer.loaded.addLayer(area)
 	areasCtl.updateArea(this.area, L.stamp(area))
 
 	console.log("Loaded " + this.area.name)
 };
 
-myareas.addArea = function(area) {
+areasLayer.addArea = function(area) {
 	if (!areasCtl.loaded[area.id]) {
 		console.log("Requesting ", area.name);
 		areasCtl.addArea(area)
@@ -309,20 +258,90 @@ myareas.addArea = function(area) {
 			url: 'https://global.mapit.mysociety.org/area/' + area.id + '.geojson?simplify_tolerance=0.0001',
 			type: 'json',
 			area: area,
-			success: myareas.area_loaded,
+			success: areasLayer.area_loaded,
 			crossOrigin: true
 		});
 	}
 }
 
-var mypoints = mypoints || {}
-mypoints.loaded = L.layerGroup().addTo(mymap);
+var areasCtl = new Vue({
+	el: '#areas',
+	data: {
+		loaded: {},
+		nr: 0,
+	},
+	methods: {
+		addArea: (area) => {
+			areasCtl.$set(areasCtl.loaded, area.id, area)
+			areasCtl.nr += 1
+		},
 
-mypoints.addPoint = function(pt) {
-	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(mypoints.loaded)
+		updateArea: (area, layer) => {
+			area.state = "ready"
+			area.layer = layer
+			areasCtl.$set(areasCtl.loaded, area.id, area)
+		},
+
+		dropArea: (area) => {
+			areasCtl.$delete(areasCtl.loaded, area.id)
+			areasCtl.nr -= 1
+		},
+
+	},
+})
+
+//
+// Points
+//
+
+var pointsLayer = pointsLayer || {}
+pointsLayer.loaded = L.layerGroup().addTo(mymap);
+
+pointsLayer.addPoint = function(pt) {
+	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(pointsLayer.loaded)
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
 	pointsCtl.addPoint(pt)
 }
+
+var pointsCtl = new Vue({
+	el: '#points',
+	data: {
+		loaded: {},
+		nr: 0,
+		hide: hidePointsToggle,
+	},
+	methods: {
+		addPoint: (pt) => {
+			let bkey = pt.countries.join(',')
+			var bucket = pointsCtl.loaded[bkey]
+
+			if (!bucket) {
+				pointsCtl.$set(pointsCtl.loaded, bkey, {})
+				bucket = pointsCtl.loaded[bkey]
+			}
+
+			Vue.set(bucket, pt.id, pt)
+			pointsCtl.nr += 1
+		},
+
+		dropPoint: (pt) => {
+			let bkey = pt.countries.join(',')
+			var bucket = pointsCtl.loaded[bkey]
+
+			Vue.delete(bucket, pt.id)
+
+			if (Object.keys(bucket).length == 0) {
+				pointsCtl.$delete(pointsCtl.loaded, bkey)
+			}
+			pointsCtl.nr -= 1
+		},
+
+	},
+})
+
+//
+// On-load
+//
 
 reqwest({
 		url: apiserver + '/visited',
@@ -333,12 +352,12 @@ reqwest({
 			if (data.areas) {
 				data.areas.forEach((item, i) => {
 					item.state = "loading"
-					myareas.addArea(item)
+					areasLayer.addArea(item)
 				})
 			}
 			if (data.points) {
 				data.points.forEach((item, i) => {
-					mypoints.addPoint(item)
+					pointsLayer.addPoint(item)
 				})
 			}
 		},
