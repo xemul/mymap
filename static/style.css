@@ -5,7 +5,7 @@ body {
 }
 
 #map {
-  position: fixed;
+  position: absolute;
   top:0;
   left:0;
   margin:5px;
@@ -21,8 +21,8 @@ body {
 }
 
 #props {
-  position: fixed;
-  top: 32%;
+  position: absolute;
+  top: 52%;
   left: 0;
   width: 70%;
   margin: 5px;

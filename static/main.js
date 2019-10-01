@@ -186,7 +186,7 @@ var selectionCtl = new Vue({
 var mapCtl = new Vue({
 	el: '#map',
 	data: {
-		height: "90%",
+		height: "95%",
 	},
 	methods: {
 		resize: (newh, pt) => {
@@ -337,7 +337,7 @@ pointsLayer.addPoint = function(pt) {
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
 	pt.marker.on('click', function(e) {
 		propsCtl.show(pt)
-		mapCtl.resize("30%", pt)
+		mapCtl.resize("50%", pt)
 	})
 	pointsCtl.addPoint(pt)
 }
@@ -384,7 +384,7 @@ var pointsCtl = new Vue({
 
 function clearProps(e) {
 	propsCtl.clear()
-	mapCtl.resize("90%", null)
+	mapCtl.resize("95%", null)
 }
 
 var propsCtl = new Vue({
@@ -392,13 +392,20 @@ var propsCtl = new Vue({
 	data: {
 		point: null,
 		visited: [],
-		newVisit: "",
+
+		newVisitDate: "",
+		newVisitTags: "",
 	},
 	methods: {
 		clear: () => {
 			propsCtl.point = null
 			propsCtl.visited = []
-			propsCtl.newVisit = ""
+			propsCtl.clearNew()
+		},
+
+		clearNew: () => {
+			propsCtl.newVisitDate = ""
+			propsCtl.newVisitTags = ""
 		},
 
 		show: (pt) => {
@@ -409,13 +416,17 @@ var propsCtl = new Vue({
 				type: 'json',
 				crossOrigin: true,
 				success: (data) => {
-					propsCtl.visited = data
+					console.log("-[visits]-> ", data)
+					propsCtl.visited = data.array || []
 				},
 			})
 		},
 
 		commit: () => {
-			let nv = { date: propsCtl.newVisit }
+			let nv = {
+				date: propsCtl.newVisitDate,
+				tags: propsCtl.newVisitTags.split(/\s*,\s*/),
+			}
 
 			reqwest({
 				url: apiserver + '/visits?id=' + propsCtl.point.id,
@@ -428,6 +439,7 @@ var propsCtl = new Vue({
 			})
 
 			propsCtl.visited.push(nv)
+			propsCtl.clearNew()
 		},
 	}
 })

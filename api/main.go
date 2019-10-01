@@ -76,11 +76,33 @@ func handleGeos(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleListVisits(w http.ResponseWriter, r *http.Request, id int) {
-	http.Error(w, "", http.StatusInternalServerError)
+	viss, err := storage.LoadVisits(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(viss)
 }
 
 func handleSaveVisits(w http.ResponseWriter, r *http.Request, id int) {
-	http.Error(w, "", http.StatusInternalServerError)
+	var sv SaveVisitReq
+
+	defer r.Body.Close()
+	err := json.NewDecoder(r.Body).Decode(&sv)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = storage.SaveVisit(id, &sv)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleVisits(w http.ResponseWriter, r *http.Request) {

@@ -15,6 +15,11 @@ type Point struct {
 	Countries	[]string		`json:"countries"`
 }
 
+type Visit struct {
+	Date		string			`json:"date"`
+	Tags		[]string		`json:"tags"`
+}
+
 type SavePointReq struct {
 	Point		*Point			`json:"point,omitempty"`
 	Areas		[]*Area			`json:"areas"`
@@ -23,6 +28,14 @@ type SavePointReq struct {
 type LoadGeosResp struct {
 	Points		[]*Point		`json:"points"`
 	Areas		[]*Area			`json:"areas"`
+}
+
+type SaveVisitReq struct {
+	Visit					`json:",inline"`
+}
+
+type LoadVisitsResp struct {
+	A		[]*Visit		`json:"array"`
 }
 
 type LocalJsonFile struct {
@@ -36,4 +49,5 @@ type AreaFile struct {
 
 type PointFile struct {
 	Point				`json:",inline"`
+	Visits		[]*Visit	`json:"visits,omitempty"`
 }

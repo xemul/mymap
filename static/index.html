@@ -33,11 +33,12 @@
 		</div>
 		<div id="visits">
 			Visited<br>
-			<table id="visitable">
-			<tr v-for="vis in visited"><td>{{vis.date}}</td></tr>
-			</table>
-			<input v-model="newVisit" placeholder="dd/mm/yyy">
+			<input v-model="newVisitDate" placeholder="dd/mm/yyy">
+			<input v-model="newVisitTags" placeholder="tag, ...">
 			<input value="+" onclick="addVisit()" type="button">
+			<table id="visitable">
+			<tr v-for="vis in visited"><td>{{vis.date}}</td><td>{{vis.tags.join(" ")}}</td></tr>
+			</table>
 		</div>
 	</div>
 </div>
