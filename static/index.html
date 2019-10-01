@@ -19,62 +19,60 @@
 <body>
 
 <div id="map" v-bind:style="{width: width, height: height}"></div>
-<div id="propsb">
-<div id="props">
-	<div v-if="timeline">
-		<hr>
-		<div align="right">
-		Timeline
-		<a href="#" v-on:click="clearPropTimeline($event)" align="right"><img src="img/close.svg"></a>
-		</div>
-	</div>
-	<div v-if="point != null">
-		<hr>
-		<div align="right">
-		{{point.name}}
-		<a href="#" v-on:click="clearPropPoint($event)" align="right"><img src="img/close.svg"></a>
-		</div>
-
-		<div id="summary">
-			<table id="sumtable">
-			<tr><td>Id</td><td>{{point.id}}</td></tr>
-			<tr><td>Coord</td><td>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</td></tr>
-			<tr><td>Area</td><td>{{point.area}}</td></tr>
-			<tr><td>Countries</td><td>{{point.countries.join(",")}}</td></tr>
-			</table>
-		</div>
-		<div id="visits">
-			Visited<br>
-			<input v-model="nvDate" placeholder="dd/mm/yyyy">
-			<input v-model="nvTags" placeholder="tag, ...">
-			<a href="#" v-on:click="addVisit($event)"><img src="img/add.svg"></a>
-			<table id="visitable">
-			<tr v-for="(vis, idx) in visited">
-				<td align="right">{{vis.date}}</td>
-				<td width="100%">{{vis.tags.join(" ")}}</td>
-				<td><a href="#" v-on:click="removeVisit($event, idx)"><img src="img/remove.svg"></a></td>
-				<td><small>{{idx}}:{{vis.idx}}</small></td>
-			</tr>
-			</table>
-		</div>
-	</div>
-</div>
-</div>
 <div id="sidebarb">
 <div id="sidebar">
 	<div id="menu">
 		<div id="login"><a href="/login" v-if="sess == null">login</a></div>
-		<div id="other"><a href="#" v-on:click="showPropTimeline($event)"><img src="img/timeline.svg"></a></div>
+		<div id="other"><a href="#" v-on:click="showTimeline($event)"><img src="img/timeline.svg"></a></div>
 	</div>
-	<div id="marker">
-		<div v-if="latlng != null">
-			Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
-			<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
-			<a href="#" v-on:click="clearMarker($event)"><img src="img/remove.svg"></a></small>
+	<div id="timeline" v-if="show">
+		<hr>Timeline
+		<a href="#" v-on:click="closeTimeline($event)" align="right"><img src="img/close.svg"></a>
+		<div v-if="state != 'ready'">
+			<small>{{state}}...</small>
 		</div>
+		<table id="visitable">
+		<tr v-for="(vis, idx) in visited">
+			<td align="right">{{vis.date}}</td>
+			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="img/locate.svg"></a></td>
+			<td width="100%">{{vis.pt.name}}</td>
+			<td>{{vis.tags.join(" ")}}</td>
+		</tr>
+		</table>
+	</div>
+	<div id="pprops" v-if="point != null">
+		<hr>
+		{{point.name}}
+		<a href="#" v-on:click="clearPropPoint($event)" align="right"><img src="img/close.svg"></a>
+
+		<table id="sumtable">
+		<tr><td>Id</td><td>{{point.id}}</td></tr>
+		<tr><td>Coord</td><td>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</td></tr>
+		<tr><td>Area</td><td>{{point.area}}</td></tr>
+		<tr><td>Countries</td><td>{{point.countries.join(",")}}</td></tr>
+		</table>
+
+		Visited<br>
+		<input v-model="nvDate" placeholder="dd/mm/yyyy">
+		<input v-model="nvTags" placeholder="tag, ...">
+		<a href="#" v-on:click="addVisit($event)"><img src="img/add.svg"></a>
+
+		<table id="visitable">
+		<tr v-for="(vis, idx) in visited">
+			<td align="right">{{vis.date}}</td>
+			<td width="100%">{{vis.tags.join(" ")}}</td>
+			<td><a href="#" v-on:click="removeVisit($event, idx)"><img src="img/remove.svg"></a></td>
+			<td><small>{{idx}}:{{vis.idx}}</small></td>
+		</tr>
+		</table>
+	</div>
+	<div id="marker" v-if="latlng != null">
+		<hr>Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
+		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
+		<a href="#" v-on:click="clearMarker($event)"><img src="img/remove.svg"></a></small>
 	</div>
 	<div id="selection" v-if="available.length != 0">
-		<hr>Available<br>
+		Available<br>
 		<template v-for="area in available">
 			<div v-if="show.show(area)">
 				<input type="checkbox" v-bind:value="area" v-model="selected">

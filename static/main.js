@@ -344,6 +344,8 @@ pointsLayer.addPoint = function(pt) {
 	pointsCtl.addPoint(pt)
 }
 
+var allPoints = {}
+
 var pointsCtl = new Vue({
 	el: '#points',
 	data: {
@@ -362,6 +364,7 @@ var pointsCtl = new Vue({
 			}
 
 			Vue.set(bucket, pt.id, pt)
+			allPoints[pt.id] = pt
 			pointsCtl.nr += 1
 		},
 
@@ -369,6 +372,7 @@ var pointsCtl = new Vue({
 			let bkey = pt.countries.join(',')
 			var bucket = pointsCtl.loaded[bkey]
 
+			delete(allPoints, pt.id)
 			Vue.delete(bucket, pt.id)
 
 			if (Object.keys(bucket).length == 0) {
@@ -381,44 +385,75 @@ var pointsCtl = new Vue({
 })
 
 //
+// Timeline
+//
+
+function showTimeline() {
+	clearPropPoint()
+	timelineCtl.show = true
+	timelineCtl.state = "loading"
+	reqwest({
+		url: apiserver + '/visits',
+		method: 'GET',
+		type: 'json',
+		crossOrigin: true,
+		success: (data) => {
+			timelineCtl.state = "ready"
+			if (data.array) {
+				data.array.forEach((v, i) => {
+					v.pt = allPoints[v.point]
+					v.idx = i
+					timelineCtl.visited.push(v)
+				})
+				timelineCtl.sortVisited()
+			}
+		},
+	})
+}
+
+function closeTimeline() {
+	timelineCtl.show = false
+	timelineCtl.state = ""
+	timelineCtl.visited = []
+}
+
+var timelineCtl = new Vue({
+	el: '#timeline',
+	data: {
+		show:		false,
+		state:		"",
+		visited:	[],
+	},
+
+	methods: {
+		sortVisited: () => {
+			timelineCtl.visited.sort((a,b) => {
+				return dateScore(b.date) - dateScore(a.date)
+			})
+		},
+	},
+})
+
+//
 // Props
 //
 
-function showPropTimeline() {
-	propsCtl.timeline = true
-	mapCtl.resize("50%", mapHeight)
-}
-
-function clearPropTimeline() {
-	propsCtl.timeline = false
-	growPropMap()
-}
-
 function showPropPoint(pt) {
+	closeTimeline()
 	propsCtl.showPoint(pt)
-	mapCtl.resize("50%", mapHeight, pt)
 }
 
 function clearPropPoint(e) {
 	propsCtl.clearPoint()
-	growPropMap()
-}
-
-function growPropMap() {
-	if (!propsCtl.timeline && propsCtl.point == null) {
-		mapCtl.resize(mapWidth, mapHeight, null)
-	}
 }
 
 var propsCtl = new Vue({
-	el: '#props',
+	el: '#pprops',
 	data: {
 		point: null,
 		visited: [],
 		nvDate: "",
 		nvTags: "",
-
-		timeline: false,
 	},
 	methods: {
 		clearPoint: () => {

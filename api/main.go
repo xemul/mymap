@@ -113,6 +113,8 @@ func handleDeleteVisit(w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
+	log.Printf("[-v] %d:%d\n", id, vn)
+
 	ok, err := storage.RemoveVisit(id, vn)
 	if err != nil {
 		if ok {
@@ -135,6 +137,7 @@ func handleVisits(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "no id given", http.StatusBadRequest)
 			return
 		}
+	} else {
 
 		var err error
 

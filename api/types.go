@@ -18,6 +18,7 @@ type Point struct {
 type Visit struct {
 	Date		string			`json:"date"`
 	Tags		[]string		`json:"tags"`
+	PId		*int			`json:"point,omitempty"`
 }
 
 type SavePointReq struct {

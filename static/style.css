@@ -20,22 +20,6 @@ body {
   padding-right: 8px;
 }
 
-#propsb {
-  position: absolute;
-  top: 1%;
-  left: 50%;
-  width: 25%;
-}
-
-#props {
-  padding-left: 8px;
-  padding-right: 8px;
-}
-
-
-#summary {
-}
-
 #sumtable {
   table-layout: fixed;
   border-collapse: collapse;
@@ -44,10 +28,7 @@ body {
 }
 
 #sumtable td {
-  padding: 5px;
-}
-
-#visits {
+  padding: 1px;
 }
 
 #visitable {
@@ -58,7 +39,7 @@ body {
 }
 
 #visitable td {
-  padding: 5px;
+  padding: 3px;
 }
 
 #menu {

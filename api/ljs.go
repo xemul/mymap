@@ -133,17 +133,32 @@ func (s *LocalJsonStorage)LoadVisits(pid int) (*LoadVisitsResp, error) {
 		return nil, err
 	}
 
-	pt, ok := f.Points[pid]
-	if !ok {
-		return nil, errors.New("no such point")
+	if pid != -1 {
+		pt, ok := f.Points[pid]
+		if !ok {
+			return nil, errors.New("no such point")
+		}
+
+		a := pt.Visits
+		if a == nil {
+			a = []*Visit{}
+		}
+
+		return &LoadVisitsResp{A: a}, nil
 	}
 
-	a := pt.Visits
-	if a == nil {
-		a = []*Visit{}
+	ret := &LoadVisitsResp{}
+
+	for _, pt := range f.Points {
+		id := pt.Id
+		for _, v := range pt.Visits {
+			vis := *v
+			vis.PId = &id
+			ret.A = append(ret.A, &vis)
+		}
 	}
 
-	return &LoadVisitsResp{A: a}, nil
+	return ret, nil
 }
 
 func (s *LocalJsonStorage)RemoveVisit(pid, vn int) (bool, error) {
@@ -161,7 +176,7 @@ func (s *LocalJsonStorage)RemoveVisit(pid, vn int) (bool, error) {
 	}
 
 	va := pt.Visits
-	if vn >= len(va)-1 {
+	if vn >= len(va) {
 		return false, nil
 	}
 
