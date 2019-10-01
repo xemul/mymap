@@ -1,45 +1,46 @@
 body {
-  padding:0; margin:0 auto;
-  width:800px;
   font-family:sans-serif;
 }
 
 #map {
-  position: absolute;
-  top:0;
+  position: fixed;
+  top:1%;
   left:0;
-  margin:5px;
-  width:70%;
 }
 
-#sidebar {
+#sidebarb {
   position: absolute;
-  top:0;
+  top:1%;
   right:0;
-  margin:5px;
   width:25%;
 }
 
-#props {
-  position: absolute;
-  top: 52%;
-  left: 0;
-  width: 70%;
-  margin: 5px;
+#sidebar {
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
-#summary {
+#propsb {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: 1%;
+  left: 50%;
   width: 25%;
+}
+
+#props {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+
+#summary {
 }
 
 #sumtable {
   table-layout: fixed;
   border-collapse: collapse;
   border: 1px solid #e0e8ff;
-  margin: 5px;
+  width: 100%;
 }
 
 #sumtable td {
@@ -47,17 +48,13 @@ body {
 }
 
 #visits {
-  position: absolute;
-  top: 0;
-  left: 25%;
-  width: 80%;
 }
 
 #visitable {
   table-layout: fixed;
   border-collapse: collapse;
   border: 1px solid #e0e8ff;
-  margin: 5px;
+  width: 100%;
 }
 
 #visitable td {

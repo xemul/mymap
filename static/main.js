@@ -186,10 +186,12 @@ var selectionCtl = new Vue({
 var mapCtl = new Vue({
 	el: '#map',
 	data: {
-		height: "95%",
+		width:	mapWidth,
+		height:	mapHeight,
 	},
 	methods: {
-		resize: (newh, pt) => {
+		resize: (neww, newh, pt) => {
+			mapCtl.width = neww
 			mapCtl.height = newh
 			Vue.nextTick(() => {
 				mymap.invalidateSize()
@@ -337,7 +339,7 @@ pointsLayer.addPoint = function(pt) {
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
 	pt.marker.on('click', function(e) {
 		propsCtl.showPoint(pt)
-		mapCtl.resize("50%", pt)
+		mapCtl.resize("50%", mapHeight, pt)
 	})
 	pointsCtl.addPoint(pt)
 }
@@ -384,7 +386,7 @@ var pointsCtl = new Vue({
 
 function clearProps(e) {
 	propsCtl.clear()
-	mapCtl.resize("95%", null)
+	mapCtl.resize(mapWidth, mapHeight, null)
 }
 
 var propsCtl = new Vue({

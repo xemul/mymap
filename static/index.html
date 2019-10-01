@@ -18,7 +18,8 @@
 </head>
 <body>
 
-<div id="map" v-bind:style="{height: height}"></div>
+<div id="map" v-bind:style="{width: width, height: height}"></div>
+<div id="propsb">
 <div id="props">
 	<div v-if="point != null">
 		<div id="summary">
@@ -31,9 +32,10 @@
 			<tr><td>Countries</td><td>{{point.countries.join(",")}}</td></tr>
 			</table>
 		</div>
+		<hr>
 		<div id="visits">
 			Visited<br>
-			<input v-model="newVisitDate" placeholder="dd/mm/yyy">
+			<input v-model="newVisitDate" placeholder="dd/mm/yyyy">
 			<input v-model="newVisitTags" placeholder="tag, ...">
 			<input value="+" onclick="addVisit()" type="button">
 			<table id="visitable">
@@ -46,59 +48,62 @@
 		</div>
 	</div>
 </div>
+</div>
+<div id="sidebarb">
 <div id="sidebar">
-<div id="login">
-	{{status}}
-</div>
-<div id="marker">
-	<div v-if="latlng != null">
-		Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
-		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})
-			<a href="#" v-on:click="clearMarker($event)">(clear)</a></small>
+	<div id="login">
+		{{status}}
 	</div>
-</div>
-<div id="selection" v-if="available.length != 0">
-	<hr>Available
-		<small><a href="#" v-on:click="show.toggle($event)">{{show.text}}</a></small><br>
-	<template v-for="area in available">
-		<div v-if="show.show(area)">
-			<input type="checkbox" v-bind:value="area" v-model="selected">
-			<label>{{area.name}} <small>({{area.type}})</small></label><br>
+	<div id="marker">
+		<div v-if="latlng != null">
+			Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
+			<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})
+				<a href="#" v-on:click="clearMarker($event)">(clear)</a></small>
 		</div>
-	</template>
-	<input v-model="pointName" placeholder="enter the point name">
-	<input value="Paint" onclick="loadSelected()" type="button">
-</div>
-<div id="points" v-if="nr > 0">
-	<hr>Points
-		<small><a href="#" v-on:click="hide.toggle($event)">{{hide.text}}</a></small><br>
-	<ul>
-		<li v-for="(bkt, tag) in loaded">
-			{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
-			<ul>
-			<li v-for="pnt in bkt">
-				{{pnt.name}} <small>
-					<a href="#" v-on:click="highlightPoint($event, pnt)">(locate)</a>
-					<a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
+	</div>
+	<div id="selection" v-if="available.length != 0">
+		<hr>Available
+			<small><a href="#" v-on:click="show.toggle($event)">{{show.text}}</a></small><br>
+		<template v-for="area in available">
+			<div v-if="show.show(area)">
+				<input type="checkbox" v-bind:value="area" v-model="selected">
+				<label>{{area.name}} <small>({{area.type}})</small></label><br>
+			</div>
+		</template>
+		<input v-model="pointName" placeholder="enter the point name">
+		<input value="Paint" onclick="loadSelected()" type="button">
+	</div>
+	<div id="points" v-if="nr > 0">
+		<hr>Points
+			<small><a href="#" v-on:click="hide.toggle($event)">{{hide.text}}</a></small><br>
+		<ul>
+			<li v-for="(bkt, tag) in loaded">
+				{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
+				<ul>
+				<li v-for="pnt in bkt">
+					{{pnt.name}} <small>
+						<a href="#" v-on:click="highlightPoint($event, pnt)">(locate)</a>
+						<a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
+				</li>
+				</ul>
 			</li>
-			</ul>
-		</li>
-	</ul>
-</div>
-<div id="areas" v-if="nr > 0">
-	<hr>Areas<br>
-	<ul>
-		<li v-for="area in loaded">
-			<div v-if="area.state != 'ready'">
-				{{area.name}}
-				<small>{{area.state}}...</small>
-			</div>
-			<div v-if="area.state == 'ready'">
-				{{area.name}}
-				<small><a href="#" v-on:click="removeArea($event, area)">(remove)</a></small>
-			</div>
-		</li>
-	</ul>
+		</ul>
+	</div>
+	<div id="areas" v-if="nr > 0">
+		<hr>Areas<br>
+		<ul>
+			<li v-for="area in loaded">
+				<div v-if="area.state != 'ready'">
+					{{area.name}}
+					<small>{{area.state}}...</small>
+				</div>
+				<div v-if="area.state == 'ready'">
+					{{area.name}}
+					<small><a href="#" v-on:click="removeArea($event, area)">(remove)</a></small>
+				</div>
+			</li>
+		</ul>
+	</div>
 </div>
 </div>
 

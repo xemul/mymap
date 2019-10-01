@@ -24,3 +24,6 @@ const placeDIcon = L.icon({
 
 const highlightTimeout = 1000
 const highlightZoom = 7
+
+const mapWidth = "75%"
+const mapHeight = "98%"
