@@ -81,8 +81,7 @@ class toggle {
 	}
 
 	toggle() {
-		this.i = (this.i + 1) % this.states.length
-		this.text = this.states[this.i]
+		this.i = (this.i + 1) % this.states
 
 		if (this.cb != null) {
 			this.cb()
@@ -91,17 +90,16 @@ class toggle {
 
 	reset() {
 		this.i = 0
-		this.text = this.states[0]
 	}
 }
 
-var showTypesToggle = new toggle(["more", "less"])
+var showTypesToggle = new toggle(2)
 
 showTypesToggle.show = function(area) {
 	return showTypesToggle.i == 1 || area.type == "O02" || area.type == "O04"
 }
 
-var hidePointsToggle = new toggle(["hide", "show"],
+var hidePointsToggle = new toggle(2,
 	function() {
 		if (hidePointsToggle.i == 0) {
 			mymap.addLayer(pointsLayer.loaded)
@@ -111,7 +109,7 @@ var hidePointsToggle = new toggle(["hide", "show"],
 	}
 )
 
-var hideAreasToggle = new toggle(["hide", "show"])
+var hideAreasToggle = new toggle(2)
 
 //
 // Sidebar stuff
