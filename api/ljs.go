@@ -81,7 +81,7 @@ func (s *LocalJsonStorage)RemoveGeo(id int, typ string) (bool, error) {
 
 	f, err := s.loadFromFile()
 	if err != nil {
-		return false, err
+		return true, err
 	}
 
 	switch {
@@ -144,6 +144,29 @@ func (s *LocalJsonStorage)LoadVisits(pid int) (*LoadVisitsResp, error) {
 	}
 
 	return &LoadVisitsResp{A: a}, nil
+}
+
+func (s *LocalJsonStorage)RemoveVisit(pid, vn int) (bool, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	f, err := s.loadFromFile()
+	if err != nil {
+		return true, err
+	}
+
+	pt, ok := f.Points[pid]
+	if !ok {
+		return false, errors.New("no such point")
+	}
+
+	va := pt.Visits
+	if vn >= len(va)-1 {
+		return false, nil
+	}
+
+	pt.Visits = append(va[:vn], va[vn+1:]...)
+	return true, s.saveToFile(f)
 }
 
 func (s *LocalJsonStorage)loadFromFile() (*LocalJsonFile, error) {

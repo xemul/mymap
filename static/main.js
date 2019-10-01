@@ -336,7 +336,7 @@ pointsLayer.addPoint = function(pt) {
 	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(pointsLayer.loaded)
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
 	pt.marker.on('click', function(e) {
-		propsCtl.show(pt)
+		propsCtl.showPoint(pt)
 		mapCtl.resize("50%", pt)
 	})
 	pointsCtl.addPoint(pt)
@@ -408,7 +408,7 @@ var propsCtl = new Vue({
 			propsCtl.newVisitTags = ""
 		},
 
-		show: (pt) => {
+		showPoint: (pt) => {
 			propsCtl.point = pt
 			reqwest({
 				url: apiserver + '/visits?id=' + pt.id,
@@ -416,36 +416,51 @@ var propsCtl = new Vue({
 				type: 'json',
 				crossOrigin: true,
 				success: (data) => {
-					console.log("-[visits]-> ", data)
 					propsCtl.visited = data.array || []
 				},
 			})
 		},
 
-		commit: () => {
-			let nv = {
-				date: propsCtl.newVisitDate,
-				tags: propsCtl.newVisitTags.split(/\s*,\s*/),
-			}
-
-			reqwest({
-				url: apiserver + '/visits?id=' + propsCtl.point.id,
-				method: 'POST',
-				contentType: 'application/json',
-				data: JSON.stringify(nv),
-				crossOrigin: true,
-				success: (data) => {
-				},
-			})
-
+		commit: (nv) => {
 			propsCtl.visited.push(nv)
 			propsCtl.clearNew()
+		},
+
+		dropVisit: (i) => {
+			propsCtl.visited.splice(i, 1)
 		},
 	}
 })
 
 function addVisit() {
-	propsCtl.commit()
+	let nv = {
+		date: propsCtl.newVisitDate,
+		tags: propsCtl.newVisitTags.split(/\s*,\s*/),
+	}
+
+	reqwest({
+		url: apiserver + '/visits?id=' + propsCtl.point.id,
+		method: 'POST',
+		contentType: 'application/json',
+		data: JSON.stringify(nv),
+		crossOrigin: true,
+		success: (data) => {
+		},
+	})
+
+	propsCtl.commit(nv)
+}
+
+function removeVisit(ev, i) {
+	reqwest({
+		url: apiserver + '/visits?id=' + propsCtl.point.id + '&vn=' + i,
+		method: 'DELETE',
+		crossOrigin: true,
+		success: (data) => {
+		},
+	})
+
+	propsCtl.dropVisit(i)
 }
 
 //

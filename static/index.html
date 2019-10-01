@@ -37,7 +37,11 @@
 			<input v-model="newVisitTags" placeholder="tag, ...">
 			<input value="+" onclick="addVisit()" type="button">
 			<table id="visitable">
-			<tr v-for="vis in visited"><td>{{vis.date}}</td><td>{{vis.tags.join(" ")}}</td></tr>
+			<tr v-for="(vis, idx) in visited">
+				<td>{{vis.date}}</td>
+				<td>{{vis.tags.join(" ")}}</td>
+				<td><small><a href="#" v-on:click="removeVisit($event, idx)">(remove)</a></small></td>
+			</tr>
 			</table>
 		</div>
 	</div>

@@ -7,6 +7,7 @@ type Storage interface {
 
 	SaveVisit(int, *SaveVisitReq) error
 	LoadVisits(int) (*LoadVisitsResp, error)
+	RemoveVisit(int, int) (bool, error)
 }
 
 var storage = &LocalJsonStorage{}

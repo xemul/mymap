@@ -59,6 +59,7 @@ func handleForgetGeos(w http.ResponseWriter, r *http.Request) {
 		} else {
 			http.Error(w, "no such area", http.StatusNotFound)
 		}
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -86,7 +87,7 @@ func handleListVisits(w http.ResponseWriter, r *http.Request, id int) {
 	json.NewEncoder(w).Encode(viss)
 }
 
-func handleSaveVisits(w http.ResponseWriter, r *http.Request, id int) {
+func handleSaveVisit(w http.ResponseWriter, r *http.Request, id int) {
 	var sv SaveVisitReq
 
 	defer r.Body.Close()
@@ -105,6 +106,26 @@ func handleSaveVisits(w http.ResponseWriter, r *http.Request, id int) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func handleDeleteVisit(w http.ResponseWriter, r *http.Request, id int) {
+	vn, err := strconv.Atoi(r.URL.Query()["vn"][0])
+	if err != nil {
+		http.Error(w, "vn must be integer", http.StatusBadRequest)
+		return
+	}
+
+	ok, err := storage.RemoveVisit(id, vn)
+	if err != nil {
+		if ok {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Error(w, "no such visit", http.StatusNotFound)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func handleVisits(w http.ResponseWriter, r *http.Request) {
 	ptId, err := strconv.Atoi(r.URL.Query()["id"][0])
 	if err != nil {
@@ -116,14 +137,16 @@ func handleVisits(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		handleListVisits(w, r, ptId)
 	case "POST":
-		handleSaveVisits(w, r, ptId)
+		handleSaveVisit(w, r, ptId)
+	case "DELETE":
+		handleDeleteVisit(w, r, ptId)
 	}
 }
 
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/geos", handleGeos).Methods("GET", "POST", "DELETE", "OPTIONS")
-	r.HandleFunc("/visits", handleVisits).Methods("GET", "POST", "OPTIONS")
+	r.HandleFunc("/visits", handleVisits).Methods("GET", "POST", "DELETE", "OPTIONS")
 
 	headersOk := handlers.AllowedHeaders([]string{"Content-Type"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
