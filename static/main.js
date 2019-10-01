@@ -384,14 +384,30 @@ var pointsCtl = new Vue({
 // Props
 //
 
+function showPropTimeline() {
+	propsCtl.timeline = true
+	mapCtl.resize("50%", mapHeight)
+}
+
+function clearPropTimeline() {
+	propsCtl.timeline = false
+	growPropMap()
+}
+
 function showPropPoint(pt) {
 	propsCtl.showPoint(pt)
 	mapCtl.resize("50%", mapHeight, pt)
 }
 
-function clearProps(e) {
-	propsCtl.clear()
-	mapCtl.resize(mapWidth, mapHeight, null)
+function clearPropPoint(e) {
+	propsCtl.clearPoint()
+	growPropMap()
+}
+
+function growPropMap() {
+	if (!propsCtl.timeline && propsCtl.point == null) {
+		mapCtl.resize(mapWidth, mapHeight, null)
+	}
 }
 
 var propsCtl = new Vue({
@@ -401,15 +417,17 @@ var propsCtl = new Vue({
 		visited: [],
 		nvDate: "",
 		nvTags: "",
+
+		timeline: false,
 	},
 	methods: {
-		clear: () => {
+		clearPoint: () => {
 			propsCtl.point = null
 			propsCtl.visited = []
-			propsCtl.clearNew()
+			propsCtl.clearNv()
 		},
 
-		clearNew: () => {
+		clearNv: () => {
 			propsCtl.nvDate = ""
 			propsCtl.nvTags = ""
 		},
@@ -417,7 +435,7 @@ var propsCtl = new Vue({
 		showPoint: (pt) => {
 			propsCtl.point = pt
 			propsCtl.visited = []
-			propsCtl.clearNew()
+			propsCtl.clearNv()
 
 			reqwest({
 				url: apiserver + '/visits?id=' + pt.id,
@@ -440,7 +458,7 @@ var propsCtl = new Vue({
 			nv.idx = propsCtl.visited.length
 			propsCtl.visited.push(nv)
 			propsCtl.sortVisited()
-			propsCtl.clearNew()
+			propsCtl.clearNv()
 		},
 
 		dropVisit: (di) => {

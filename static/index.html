@@ -21,14 +21,21 @@
 <div id="map" v-bind:style="{width: width, height: height}"></div>
 <div id="propsb">
 <div id="props">
-	<div v-if="point != null">
+	<div v-if="timeline">
+		<hr>
 		<div align="right">
-		<a href="#" v-on:click="clearProps($event)" align="right"><img src="img/close.svg"></a>
+		Timeline
+		<a href="#" v-on:click="clearPropTimeline($event)" align="right"><img src="img/close.svg"></a>
+		</div>
+	</div>
+	<div v-if="point != null">
+		<hr>
+		<div align="right">
+		{{point.name}}
+		<a href="#" v-on:click="clearPropPoint($event)" align="right"><img src="img/close.svg"></a>
 		</div>
 
-		<hr>
 		<div id="summary">
-			{{point.name}}
 			<table id="sumtable">
 			<tr><td>Id</td><td>{{point.id}}</td></tr>
 			<tr><td>Coord</td><td>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</td></tr>
@@ -36,7 +43,6 @@
 			<tr><td>Countries</td><td>{{point.countries.join(",")}}</td></tr>
 			</table>
 		</div>
-		<hr>
 		<div id="visits">
 			Visited<br>
 			<input v-model="nvDate" placeholder="dd/mm/yyyy">
@@ -58,7 +64,7 @@
 <div id="sidebar">
 	<div id="menu">
 		<div id="login"><a href="/login" v-if="sess == null">login</a></div>
-		<div id="other">...</div>
+		<div id="other"><a href="#" v-on:click="showPropTimeline($event)"><img src="img/timeline.svg"></a></div>
 	</div>
 	<div id="marker">
 		<div v-if="latlng != null">
