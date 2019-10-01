@@ -115,8 +115,8 @@ var hideAreasToggle = new toggle(2)
 // Sidebar stuff
 //
 
-var loginCtl = new Vue({
-	el: '#login',
+var menuCtl = new Vue({
+	el: '#menu',
 	data: {
 		sess: null,
 	},
@@ -339,8 +339,7 @@ pointsLayer.addPoint = function(pt) {
 	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(pointsLayer.loaded)
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
 	pt.marker.on('click', function(e) {
-		propsCtl.showPoint(pt)
-		mapCtl.resize("50%", mapHeight, pt)
+		showPropPoint(pt)
 	})
 	pointsCtl.addPoint(pt)
 }
@@ -385,6 +384,11 @@ var pointsCtl = new Vue({
 // Props
 //
 
+function showPropPoint(pt) {
+	propsCtl.showPoint(pt)
+	mapCtl.resize("50%", mapHeight, pt)
+}
+
 function clearProps(e) {
 	propsCtl.clear()
 	mapCtl.resize(mapWidth, mapHeight, null)
@@ -395,9 +399,8 @@ var propsCtl = new Vue({
 	data: {
 		point: null,
 		visited: [],
-
-		newVisitDate: "",
-		newVisitTags: "",
+		nvDate: "",
+		nvTags: "",
 	},
 	methods: {
 		clear: () => {
@@ -407,8 +410,8 @@ var propsCtl = new Vue({
 		},
 
 		clearNew: () => {
-			propsCtl.newVisitDate = ""
-			propsCtl.newVisitTags = ""
+			propsCtl.nvDate = ""
+			propsCtl.nvTags = ""
 		},
 
 		showPoint: (pt) => {
@@ -470,8 +473,8 @@ function dateScore(date) {
 
 function addVisit() {
 	let nv = {
-		date: propsCtl.newVisitDate,
-		tags: propsCtl.newVisitTags.split(/\s*,\s*/),
+		date: propsCtl.nvDate,
+		tags: propsCtl.nvTags.split(/\s*,\s*/),
 	}
 
 	reqwest({

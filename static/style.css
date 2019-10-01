@@ -60,3 +60,13 @@ body {
 #visitable td {
   padding: 5px;
 }
+
+#menu {
+}
+
+#login {
+  position: absolute;
+  right: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+}

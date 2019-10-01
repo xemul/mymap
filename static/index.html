@@ -25,6 +25,8 @@
 		<div align="right">
 		<a href="#" v-on:click="clearProps($event)" align="right"><img src="img/close.svg"></a>
 		</div>
+
+		<hr>
 		<div id="summary">
 			{{point.name}}
 			<table id="sumtable">
@@ -37,8 +39,8 @@
 		<hr>
 		<div id="visits">
 			Visited<br>
-			<input v-model="newVisitDate" placeholder="dd/mm/yyyy">
-			<input v-model="newVisitTags" placeholder="tag, ...">
+			<input v-model="nvDate" placeholder="dd/mm/yyyy">
+			<input v-model="nvTags" placeholder="tag, ...">
 			<a href="#" v-on:click="addVisit($event)"><img src="img/add.svg"></a>
 			<table id="visitable">
 			<tr v-for="(vis, idx) in visited">
@@ -54,8 +56,9 @@
 </div>
 <div id="sidebarb">
 <div id="sidebar">
-	<div id="login" align="right">
-		<a href="/login" v-if="sess == null">login</a>
+	<div id="menu">
+		<div id="login"><a href="/login" v-if="sess == null">login</a></div>
+		<div id="other">...</div>
 	</div>
 	<div id="marker">
 		<div v-if="latlng != null">
