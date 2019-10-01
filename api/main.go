@@ -127,19 +127,31 @@ func handleDeleteVisit(w http.ResponseWriter, r *http.Request, id int) {
 }
 
 func handleVisits(w http.ResponseWriter, r *http.Request) {
-	ptId, err := strconv.Atoi(r.URL.Query()["id"][0])
-	if err != nil {
-		http.Error(w, "id must be integer", http.StatusBadRequest)
-		return
+	id := r.URL.Query()["id"]
+	ptid := -1
+
+	if len(id) == 0 {
+		if r.Method != "GET" {
+			http.Error(w, "no id given", http.StatusBadRequest)
+			return
+		}
+
+		var err error
+
+		ptid, err = strconv.Atoi(id[0])
+		if err != nil {
+			http.Error(w, "id must be integer", http.StatusBadRequest)
+			return
+		}
 	}
 
 	switch r.Method {
 	case "GET":
-		handleListVisits(w, r, ptId)
+		handleListVisits(w, r, ptid)
 	case "POST":
-		handleSaveVisit(w, r, ptId)
+		handleSaveVisit(w, r, ptid)
 	case "DELETE":
-		handleDeleteVisit(w, r, ptId)
+		handleDeleteVisit(w, r, ptid)
 	}
 }
 
