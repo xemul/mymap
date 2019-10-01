@@ -51,8 +51,8 @@
 </div>
 <div id="sidebarb">
 <div id="sidebar">
-	<div id="login">
-		{{status}}
+	<div id="login" align="right">
+		<a href="/login" v-if="sess == null">login</a>
 	</div>
 	<div id="marker">
 		<div v-if="latlng != null">
@@ -76,7 +76,7 @@
 	<div id="points" v-if="nr > 0">
 		<hr>Points
 			<small><a href="#" v-on:click="hide.toggle($event)">{{hide.text}}</a></small><br>
-		<ul>
+		<ul v-if="hide.i == 0">
 			<li v-for="(bkt, tag) in loaded">
 				{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
 				<ul>
@@ -90,8 +90,9 @@
 		</ul>
 	</div>
 	<div id="areas" v-if="nr > 0">
-		<hr>Areas<br>
-		<ul>
+		<hr>Areas
+			<small><a href="#" v-on:click="hide.toggle($event)">{{hide.text}}</a></small><br>
+		<ul v-if="hide.i == 0">
 			<li v-for="area in loaded">
 				<div v-if="area.state != 'ready'">
 					{{area.name}}

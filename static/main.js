@@ -111,6 +111,8 @@ var hidePointsToggle = new toggle(["hide", "show"],
 	}
 )
 
+var hideAreasToggle = new toggle(["hide", "show"])
+
 //
 // Sidebar stuff
 //
@@ -118,7 +120,7 @@ var hidePointsToggle = new toggle(["hide", "show"],
 var loginCtl = new Vue({
 	el: '#login',
 	data: {
-		status: "Not logged in",
+		sess: null,
 	},
 })
 
@@ -306,6 +308,7 @@ var areasCtl = new Vue({
 	data: {
 		loaded: {},
 		nr: 0,
+		hide: hideAreasToggle,
 	},
 	methods: {
 		addArea: (area) => {
