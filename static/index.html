@@ -37,7 +37,7 @@
 			Visited<br>
 			<input v-model="newVisitDate" placeholder="dd/mm/yyyy">
 			<input v-model="newVisitTags" placeholder="tag, ...">
-			<input value="+" onclick="addVisit()" type="button">
+			<small><a href="#" v-on:click="addVisit($event)">(add)</a></small>
 			<table id="visitable">
 			<tr v-for="(vis, idx) in visited">
 				<td align="right">{{vis.date}}</td>
@@ -72,7 +72,7 @@
 			</div>
 		</template>
 		<input v-model="pointName" placeholder="enter the point name">
-		<input value="Paint" onclick="loadSelected()" type="button">
+		<small><a href="#" v-on:click="loadSelected($event)">(save)</a></small>
 	</div>
 	<div id="points" v-if="nr > 0">
 		<hr>Points
