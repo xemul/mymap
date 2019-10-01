@@ -22,9 +22,11 @@
 <div id="propsb">
 <div id="props">
 	<div v-if="point != null">
+		<div align="right">
+		<a href="#" v-on:click="clearProps($event)" align="right"><img src="img/close.svg"></a>
+		</div>
 		<div id="summary">
 			{{point.name}}
-			<small><a href="#" v-on:click="clearProps($event)">(close)</a></small><br>
 			<table id="sumtable">
 			<tr><td>Id</td><td>{{point.id}}</td></tr>
 			<tr><td>Coord</td><td>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</td></tr>
@@ -37,12 +39,12 @@
 			Visited<br>
 			<input v-model="newVisitDate" placeholder="dd/mm/yyyy">
 			<input v-model="newVisitTags" placeholder="tag, ...">
-			<small><a href="#" v-on:click="addVisit($event)">(add)</a></small>
+			<a href="#" v-on:click="addVisit($event)"><img src="img/add.svg"></a>
 			<table id="visitable">
 			<tr v-for="(vis, idx) in visited">
 				<td align="right">{{vis.date}}</td>
 				<td width="100%">{{vis.tags.join(" ")}}</td>
-				<td><small><a href="#" v-on:click="removeVisit($event, idx)">(remove)</a></small></td>
+				<td><a href="#" v-on:click="removeVisit($event, idx)"><img src="img/remove.svg"></a></td>
 				<td><small>{{idx}}:{{vis.idx}}</small></td>
 			</tr>
 			</table>
@@ -58,33 +60,39 @@
 	<div id="marker">
 		<div v-if="latlng != null">
 			Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
-			<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})
-				<a href="#" v-on:click="clearMarker($event)">(clear)</a></small>
+			<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
+			<a href="#" v-on:click="clearMarker($event)"><img src="img/remove.svg"></a></small>
 		</div>
 	</div>
 	<div id="selection" v-if="available.length != 0">
-		<hr>Available
-			<small><a href="#" v-on:click="show.toggle($event)">{{show.text}}</a></small><br>
+		<hr>Available<br>
 		<template v-for="area in available">
 			<div v-if="show.show(area)">
 				<input type="checkbox" v-bind:value="area" v-model="selected">
 				<label>{{area.name}} <small>({{area.type}})</small></label><br>
 			</div>
 		</template>
+		<a href="#" v-on:click="show.toggle($event)">
+			<img v-if="show.i == 0" src="img/more.svg">
+			<img v-if="show.i == 1" src="img/less.svg">
+		</a><br>
 		<input v-model="pointName" placeholder="enter the point name">
-		<small><a href="#" v-on:click="loadSelected($event)">(save)</a></small>
+		<a href="#" v-on:click="loadSelected($event)"><img src="img/add.svg"></a>
 	</div>
 	<div id="points" v-if="nr > 0">
 		<hr>Points
-			<small><a href="#" v-on:click="hide.toggle($event)">{{hide.text}}</a></small><br>
+			<a href="#" v-on:click="hide.toggle($event)">
+				<img v-if="hide.i == 0" src="img/show.svg">
+				<img v-if="hide.i == 1" src="img/hide.svg">
+			</a>
 		<ul v-if="hide.i == 0">
 			<li v-for="(bkt, tag) in loaded">
 				{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
 				<ul>
 				<li v-for="pnt in bkt">
-					{{pnt.name}} <small>
-						<a href="#" v-on:click="highlightPoint($event, pnt)">(locate)</a>
-						<a href="#" v-on:click="removePoint($event, pnt)">(remove)</a></small>
+					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="img/locate.svg"></a>
+					{{pnt.name}}
+					<a href="#" v-on:click="removePoint($event, pnt)"><img src="img/remove.svg"></a>
 				</li>
 				</ul>
 			</li>
@@ -92,7 +100,10 @@
 	</div>
 	<div id="areas" v-if="nr > 0">
 		<hr>Areas
-			<small><a href="#" v-on:click="hide.toggle($event)">{{hide.text}}</a></small><br>
+			<a href="#" v-on:click="hide.toggle($event)">
+				<img v-if="hide.i == 0" src="img/show.svg">
+				<img v-if="hide.i == 1" src="img/hide.svg">
+			</a>
 		<ul v-if="hide.i == 0">
 			<li v-for="area in loaded">
 				<div v-if="area.state != 'ready'">
@@ -101,7 +112,7 @@
 				</div>
 				<div v-if="area.state == 'ready'">
 					{{area.name}}
-					<small><a href="#" v-on:click="removeArea($event, area)">(remove)</a></small>
+					<a href="#" v-on:click="removeArea($event, area)"><img src="img/remove.svg"></a>
 				</div>
 			</li>
 		</ul>
