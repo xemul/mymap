@@ -51,7 +51,7 @@ body {
 }
 
 #visitable {
-  table-layout: fixed;
+  table-layout: auto;
   border-collapse: collapse;
   border: 1px solid #e0e8ff;
   width: 100%;

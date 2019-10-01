@@ -415,27 +415,60 @@ var propsCtl = new Vue({
 
 		showPoint: (pt) => {
 			propsCtl.point = pt
+			propsCtl.visited = []
+			propsCtl.clearNew()
+
 			reqwest({
 				url: apiserver + '/visits?id=' + pt.id,
 				method: 'GET',
 				type: 'json',
 				crossOrigin: true,
 				success: (data) => {
-					propsCtl.visited = data.array || []
+					if (data.array) {
+						data.array.forEach((v, i) => {
+							v.idx = i
+							propsCtl.visited.push(v)
+						})
+						propsCtl.sortVisited()
+					}
 				},
 			})
 		},
 
 		commit: (nv) => {
+			nv.idx = propsCtl.visited.length
 			propsCtl.visited.push(nv)
+			propsCtl.sortVisited()
 			propsCtl.clearNew()
 		},
 
-		dropVisit: (i) => {
-			propsCtl.visited.splice(i, 1)
+		dropVisit: (di) => {
+			let rdi = propsCtl.visited[di].idx
+			propsCtl.visited.splice(di, 1)
+			propsCtl.visited.forEach((v, i) => {
+				if (v.idx > rdi) {
+					v.idx -= 1
+				}
+			})
+		},
+
+		sortVisited: () => {
+			propsCtl.visited.sort((a,b) => {
+				return dateScore(b.date) - dateScore(a.date)
+			})
 		},
 	}
 })
+
+function dateScore(date) {
+	let ds = date.split("/")
+
+	let y = parseInt(ds.pop()) || 0
+	let m = parseInt(ds.pop()) || 0
+	let d = parseInt(ds.pop()) || 0
+
+	return ((y * 12) + m) * 32 + d
+}
 
 function addVisit() {
 	let nv = {
@@ -450,22 +483,26 @@ function addVisit() {
 		data: JSON.stringify(nv),
 		crossOrigin: true,
 		success: (data) => {
+			propsCtl.commit(nv)
+		},
+		error: (err) => {
+			console.log("canot save visit", err)
 		},
 	})
-
-	propsCtl.commit(nv)
 }
 
 function removeVisit(ev, i) {
 	reqwest({
-		url: apiserver + '/visits?id=' + propsCtl.point.id + '&vn=' + i,
+		url: apiserver + '/visits?id=' + propsCtl.point.id + '&vn=' + propsCtl.visited[i].idx,
 		method: 'DELETE',
 		crossOrigin: true,
 		success: (data) => {
+			propsCtl.dropVisit(i)
+		},
+		error: (err) => {
+			console.log("canot remove visit", err)
 		},
 	})
-
-	propsCtl.dropVisit(i)
 }
 
 //
