@@ -1,13 +1,18 @@
 # mymap
-OSM-based map painter
+OSM-based map painter and visits keeper
 
 == To start ==
 
-* go get github.com/gorilla/mux
-* go get github.com/gorilla/handlers
+* cd app/
 * npm install express
 * npm install body-parser
-* cd api/ && go build
-* api/api &
-* node app.js &
+* /* prepare google-config.txt */
+* run.sh app.js
+
+* cd api/
+* go get github.com/gorilla/mux
+* go get github.com/gorilla/handlers
+* go build
+* api/api
+
 * $browser http://localhost:8081
