@@ -172,7 +172,7 @@ var selectionCtl = new Vue({
 					type:	area.type,
 				})
 
-				if (smallest == null || smallest.type > area.type) {
+				if (smallest == null || smallest.type < area.type) {
 					smallest = area
 				}
 			})
@@ -426,6 +426,8 @@ function showTimeline() {
 	showHidebar("timeline")
 
 	timelineCtl.state = "loading"
+	timelineCtl.visited = []
+
 	reqwest({
 		url: apiserver + '/visits',
 		method: 'GET',
