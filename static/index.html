@@ -106,11 +106,10 @@
 		<table id="sumtable">
 		<tr><td>Id</td><td>{{point.id}}</td></tr>
 		<tr><td>Coord</td><td>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</td></tr>
-		<tr><td>Area</td><td>{{point.area}}</td></tr>
-		<tr><td>Countries</td><td>{{point.countries.join(",")}}</td></tr>
+		<tr><td>Inside</td><td>{{point.area}}:{{point.countries.join(",")}}</td></tr>
 		</table>
 
-		Visited<br>
+		<br><img src="img/visit.svg"><br>
 		<input v-model="nvDate" placeholder="dd/mm/yyyy">
 		<input v-model="nvTags" placeholder="tag, ...">
 		<a href="#" v-on:click="addVisit($event)"><img src="img/add.svg"></a>
