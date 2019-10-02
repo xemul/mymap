@@ -20,6 +20,18 @@ body {
   padding-right: 8px;
 }
 
+#hidebarb {
+  position: absolute;
+  top:1%;
+  right:25%;
+  width:25%;
+}
+
+#hidebar {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
 #sumtable {
   table-layout: fixed;
   border-collapse: collapse;

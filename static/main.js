@@ -109,7 +109,24 @@ var hidePointsToggle = new toggle(2,
 	}
 )
 
-var hideAreasToggle = new toggle(2)
+//
+// Hidebar stuff
+//
+
+var hidebar = { n: "" }
+
+function showHidebar(w) {
+	if (hidebar.n == "") {
+		mapCtl.resize("50%", mapHeight)
+	}
+
+	hidebar.n = w
+}
+
+function closeHidebar() {
+	hidebar.n = ""
+	mapCtl.resize(mapWidth, mapHeight)
+}
 
 //
 // Sidebar stuff
@@ -266,6 +283,14 @@ var markerCtl = new Vue({
 // Areas
 //
 
+function showAreas() {
+	showHidebar("areas")
+}
+
+function closeAreas() {
+	closeHidebar()
+}
+
 var areasLayer = areasLayer || {};
 areasLayer.loaded = L.featureGroup().addTo(mymap);
 
@@ -306,7 +331,7 @@ var areasCtl = new Vue({
 	data: {
 		loaded: {},
 		nr: 0,
-		hide: hideAreasToggle,
+		show: hidebar,
 	},
 	methods: {
 		addArea: (area) => {
@@ -332,6 +357,14 @@ var areasCtl = new Vue({
 // Points
 //
 
+function showPoints() {
+	showHidebar("points")
+}
+
+function closePoints() {
+	closeHidebar()
+}
+
 var pointsLayer = pointsLayer || {}
 pointsLayer.loaded = L.layerGroup().addTo(mymap);
 
@@ -352,6 +385,7 @@ var pointsCtl = new Vue({
 		loaded: {},
 		nr: 0,
 		hide: hidePointsToggle,
+		show: hidebar,
 	},
 	methods: {
 		addPoint: (pt) => {
@@ -389,8 +423,8 @@ var pointsCtl = new Vue({
 //
 
 function showTimeline() {
-	clearPropPoint()
-	timelineCtl.show = true
+	showHidebar("timeline")
+
 	timelineCtl.state = "loading"
 	reqwest({
 		url: apiserver + '/visits',
@@ -412,17 +446,17 @@ function showTimeline() {
 }
 
 function closeTimeline() {
-	timelineCtl.show = false
 	timelineCtl.state = ""
 	timelineCtl.visited = []
+	closeHidebar()
 }
 
 var timelineCtl = new Vue({
 	el: '#timeline',
 	data: {
-		show:		false,
 		state:		"",
 		visited:	[],
+		show:		hidebar,
 	},
 
 	methods: {
@@ -439,7 +473,6 @@ var timelineCtl = new Vue({
 //
 
 function showPropPoint(pt) {
-	closeTimeline()
 	propsCtl.showPoint(pt)
 }
 

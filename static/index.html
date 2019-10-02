@@ -19,13 +19,10 @@
 <body>
 
 <div id="map" v-bind:style="{width: width, height: height}"></div>
-<div id="sidebarb">
-<div id="sidebar">
-	<div id="menu">
-		<div id="login"><a href="/login" v-if="sess == null">login</a></div>
-		<div id="other"><a href="#" v-on:click="showTimeline($event)"><img src="img/timeline.svg"></a></div>
-	</div>
-	<div id="timeline" v-if="show">
+
+<div id="hidebarb">
+<div id="hidebar">
+	<div id="timeline" v-if="show.n == 'timeline'">
 		<hr>Timeline
 		<a href="#" v-on:click="closeTimeline($event)" align="right"><img src="img/close.svg"></a>
 		<div v-if="state != 'ready'">
@@ -40,9 +37,58 @@
 		</tr>
 		</table>
 	</div>
+	<div id="points" v-if="show.n == 'points'">
+		<hr>Points
+			<a href="#" v-on:click="hide.toggle($event)">
+				<img v-if="hide.i == 0" src="img/show.svg">
+				<img v-if="hide.i == 1" src="img/hide.svg">
+			</a>
+			<a href="#" v-on:click="closePoints($event)" align="right"><img src="img/close.svg"></a>
+		<ul>
+			<li v-for="(bkt, tag) in loaded">
+				{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
+				<ul>
+				<li v-for="pnt in bkt">
+					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="img/locate.svg"></a>
+					{{pnt.name}}
+					<a href="#" v-on:click="removePoint($event, pnt)"><img src="img/remove.svg"></a>
+				</li>
+				</ul>
+			</li>
+		</ul>
+	</div>
+	<div id="areas" v-if="show.n == 'areas'">
+		<hr>Areas
+			<a href="#" v-on:click="closeAreas($event)" align="right"><img src="img/close.svg"></a>
+		<ul>
+			<li v-for="area in loaded">
+				{{area.name}}
+				<span v-if="area.state != 'ready'">
+					<small>{{area.state}}...</small>
+				</span>
+				<span v-if="area.state == 'ready'">
+					<a href="#" v-on:click="removeArea($event, area)"><img src="img/remove.svg"></a>
+				</span>
+			</li>
+		</ul>
+	</div>
+</div>
+</div>
+
+<div id="sidebarb">
+<div id="sidebar">
+	<div id="menu">
+		<div id="login"><a href="/login" v-if="sess == null">login</a></div>
+
+		<div id="other">
+			<a href="#" v-on:click="showTimeline($event)"><img src="img/timeline.svg"></a>
+			<a href="#" v-on:click="showPoints($event)"><img src="img/points.svg"></a>
+			<a href="#" v-on:click="showAreas($event)"><img src="img/areas.svg"></a>
+		</div>
+	</div>
 	<div id="pprops" v-if="point != null">
 		<hr>
-		{{point.name}}
+		<img src="img/place.svg"> {{point.name}}
 		<a href="#" v-on:click="clearPropPoint($event)" align="right"><img src="img/close.svg"></a>
 
 		<table id="sumtable">
@@ -67,12 +113,12 @@
 		</table>
 	</div>
 	<div id="marker" v-if="latlng != null">
-		<hr>Marker: {{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
+		<hr><img src="img/point.svg">{{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
 		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
-		<a href="#" v-on:click="clearMarker($event)"><img src="img/remove.svg"></a></small>
+		<a href="#" v-on:click="clearMarker($event)"><img src="img/close.svg"></a>
 	</div>
 	<div id="selection" v-if="available.length != 0">
-		Available<br>
+		<img src="img/area.svg"><br>
 		<template v-for="area in available">
 			<div v-if="show.show(area)">
 				<input type="checkbox" v-bind:value="area" v-model="selected">
@@ -83,46 +129,9 @@
 			<img v-if="show.i == 0" src="img/more.svg">
 			<img v-if="show.i == 1" src="img/less.svg">
 		</a><br>
+		<img src="img/place.svg">
 		<input v-model="pointName" placeholder="enter the point name">
 		<a href="#" v-on:click="loadSelected($event)"><img src="img/add.svg"></a>
-	</div>
-	<div id="points" v-if="nr > 0">
-		<hr>Points
-			<a href="#" v-on:click="hide.toggle($event)">
-				<img v-if="hide.i == 0" src="img/show.svg">
-				<img v-if="hide.i == 1" src="img/hide.svg">
-			</a>
-		<ul v-if="hide.i == 0">
-			<li v-for="(bkt, tag) in loaded">
-				{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
-				<ul>
-				<li v-for="pnt in bkt">
-					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="img/locate.svg"></a>
-					{{pnt.name}}
-					<a href="#" v-on:click="removePoint($event, pnt)"><img src="img/remove.svg"></a>
-				</li>
-				</ul>
-			</li>
-		</ul>
-	</div>
-	<div id="areas" v-if="nr > 0">
-		<hr>Areas
-			<a href="#" v-on:click="hide.toggle($event)">
-				<img v-if="hide.i == 0" src="img/show.svg">
-				<img v-if="hide.i == 1" src="img/hide.svg">
-			</a>
-		<ul v-if="hide.i == 0">
-			<li v-for="area in loaded">
-				<div v-if="area.state != 'ready'">
-					{{area.name}}
-					<small>{{area.state}}...</small>
-				</div>
-				<div v-if="area.state == 'ready'">
-					{{area.name}}
-					<a href="#" v-on:click="removeArea($event, area)"><img src="img/remove.svg"></a>
-				</div>
-			</li>
-		</ul>
 	</div>
 </div>
 </div>

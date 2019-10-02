@@ -6,8 +6,8 @@ const placeTolltipOpacity = 0.7
 
 const pointIcon = L.icon({
 	iconUrl:	'img/point.svg',
-	iconSize:	[28, 42],
-	iconAnchor:	[14, 41],
+	iconSize:	[20, 30],
+	iconAnchor:	[10, 29],
 })
 
 const placeIcon = L.icon({
