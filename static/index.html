@@ -23,8 +23,11 @@
 <div id="hidebarb">
 <div id="hidebar">
 	<div id="timeline" v-if="show.n == 'timeline'">
-		<hr>Timeline
-		<a href="#" v-on:click="closeTimeline($event)" align="right"><img src="img/close.svg"></a>
+		<hr>
+		<div class="caption">
+		<div>Timeline</div>
+		<div><a href="#" v-on:click="closeTimeline($event)" align="right"><img src="img/close.svg"></a></div>
+		</div>
 		<div v-if="state != 'ready'">
 			<small>{{state}}...</small>
 		</div>
@@ -38,12 +41,16 @@
 		</table>
 	</div>
 	<div id="points" v-if="show.n == 'points'">
-		<hr>Points
+		<hr>
+		<div class="caption">
+		<div>Points
 			<a href="#" v-on:click="hide.toggle($event)">
 				<img v-if="hide.i == 0" src="img/show.svg">
 				<img v-if="hide.i == 1" src="img/hide.svg">
 			</a>
-			<a href="#" v-on:click="closePoints($event)" align="right"><img src="img/close.svg"></a>
+		</div>
+		<div><a href="#" v-on:click="closePoints($event)" align="right"><img src="img/close.svg"></a></div>
+		</div>
 		<ul>
 			<li v-for="(bkt, tag) in loaded">
 				{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
@@ -58,8 +65,11 @@
 		</ul>
 	</div>
 	<div id="areas" v-if="show.n == 'areas'">
-		<hr>Areas
-			<a href="#" v-on:click="closeAreas($event)" align="right"><img src="img/close.svg"></a>
+		<hr>
+		<div class="caption">
+		<div>Areas</div>
+		<div><a href="#" v-on:click="closeAreas($event)" align="right"><img src="img/close.svg"></a></div>
+		</div>
 		<ul>
 			<li v-for="area in loaded">
 				{{area.name}}
@@ -88,8 +98,10 @@
 	</div>
 	<div id="pprops" v-if="point != null">
 		<hr>
-		<img src="img/place.svg"> {{point.name}}
-		<a href="#" v-on:click="clearPropPoint($event)" align="right"><img src="img/close.svg"></a>
+		<div class="caption">
+		<div><img src="img/place.svg"> {{point.name}}</div>
+		<div><a href="#" v-on:click="clearPropPoint($event)" align="right"><img src="img/close.svg"></a></div>
+		</div>
 
 		<table id="sumtable">
 		<tr><td>Id</td><td>{{point.id}}</td></tr>
@@ -113,25 +125,46 @@
 		</table>
 	</div>
 	<div id="marker" v-if="latlng != null">
-		<hr><img src="img/point.svg">{{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
-		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
-		<a href="#" v-on:click="clearMarker($event)"><img src="img/close.svg"></a>
+		<hr>
+		<div class="caption">
+		<div>
+			<img src="img/point.svg">
+			{{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
+			<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
+		</div>
+		<div><a href="#" v-on:click="clearMarker($event)"><img src="img/close.svg"></a></div>
+		</div>
 	</div>
 	<div id="selection" v-if="available.length != 0">
-		<img src="img/area.svg"><br>
-		<template v-for="area in available">
-			<div v-if="show.show(area)">
-				<input type="checkbox" v-bind:value="area" v-model="selected">
-				<label>{{area.name}} <small>({{area.type}})</small></label><br>
-			</div>
-		</template>
-		<a href="#" v-on:click="show.toggle($event)">
-			<img v-if="show.i == 0" src="img/more.svg">
-			<img v-if="show.i == 1" src="img/less.svg">
-		</a><br>
-		<img src="img/place.svg">
-		<input v-model="pointName" placeholder="enter the point name">
-		<a href="#" v-on:click="loadSelected($event)"><img src="img/add.svg"></a>
+		<table border=0>
+		<tr>
+			<td valign="top"><img src="img/area.svg"></td>
+			<td>
+			<template v-for="area in available">
+				<div v-if="show.show(area)">
+					<input type="checkbox" v-bind:value="area" v-model="selected">
+					<label>{{area.name}} <small>({{area.type}})</small></label><br>
+				</div>
+			</template>
+			</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>
+			<a href="#" v-on:click="show.toggle($event)">
+				<img v-if="show.i == 0" src="img/more.svg">
+				<img v-if="show.i == 1" src="img/less.svg">
+			</a>
+			</td>
+		</tr>
+		<tr>
+			<td valign="top"><img src="img/place.svg"></td>
+			<td>
+			<input v-model="pointName" placeholder="enter the point name">
+			<a href="#" v-on:click="loadSelected($event)"><img src="img/add.svg"></a>
+			</td>
+		</tr>
+		</table>
 	</div>
 </div>
 </div>
