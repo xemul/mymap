@@ -1,0 +1,3 @@
+client 1234567890ABCDEFGHIJKLMNOP-somethingelse123.apps.googleusercontent.com
+secret RaND0MsTr1n9
+redirect http://your.domain/auth/google/callback
