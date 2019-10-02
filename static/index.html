@@ -88,7 +88,13 @@
 <div id="sidebarb">
 <div id="sidebar">
 	<div id="menu">
-		<div id="login"><a href="/login" v-if="sess == null">login</a></div>
+		<div id="login">
+			<span v-if="sess == null"><img src="img/more.svg"></span>
+			<span v-if="sess != null">
+			<span v-if="sess.user == null"><a href="/login">login</a></span>
+			<span v-if="sess.user != null">{{sess.user.name}}&nbsp;<a href="/logout">(logout)</a></span>
+			</span>
+		</div>
 
 		<div id="other">
 			<a href="#" v-on:click="showTimeline($event)"><img src="img/timeline.svg"></a>

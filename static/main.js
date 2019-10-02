@@ -617,3 +617,20 @@ reqwest({
 			}
 		},
 })
+
+reqwest({
+	url: '/creds',
+	type: 'json',
+	success: (data) => {
+		console.log("Auth OK", data)
+		menuCtl.sess = {
+			user: data
+		}
+	},
+	error: (err) => {
+		console.log("Auth FAILED", err)
+		menuCtl.sess = {
+			user: null
+		}
+	},
+})
