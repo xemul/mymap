@@ -41,9 +41,25 @@ var hidePointsToggle = new toggle(2,
 )
 
 backendRq = function(rq) {
-	rq.url = apiserver + rq.url
-	rq.crossOrigin = true
-	reqwest(rq)
+	console.log("-[rq]->", rq)
+
+	switch (rq.method) {
+	case 'GET':
+		axios.get(apiserver + rq.url).
+			then((resp) => { rq.success(resp.data) }).
+			catch((err) => { rq.error(err) })
+		break
+	case 'POST':
+		axios.post(apiserver + rq.url, rq.data).
+			then((resp) => { rq.success(resp.data) }).
+			catch((err) => { rq.error(err) })
+		break
+	case 'DELETE':
+		axios.delete(apiserver + rq.url).
+			then((resp) => { rq.success(resp.data) }).
+			catch((err) => { rq.error(err) })
+		break
+	}
 }
 
 //
@@ -80,6 +96,20 @@ var menuCtl = new Vue({
 		showTimeline: () => {
 			hidebar.show("timeline")
 			timelineCtl.load()
+		},
+	},
+})
+
+var errCtl = new Vue({
+	el: '#errors',
+	data: {
+		message: "",
+	},
+	methods: {
+		err: (txt) => {
+			console.log(txt)
+			errCtl.message = txt
+			setTimeout(() => { errCtl.message = "" }, errorTimeout)
 		},
 	},
 })
@@ -162,10 +192,12 @@ var selectionCtl = new Vue({
 			backendRq({
 				url: '/geos',
 				method: 'POST',
-				contentType: 'application/json',
 				data: JSON.stringify(rq),
 				success: (x) => {
 					selectionCtl.commit(rq)
+				},
+				error: (err) => {
+					errCtl.err("Cannot save point: " + err.message)
 				},
 			})
 		},
@@ -332,6 +364,9 @@ var areasCtl = new Vue({
 					success: (x) => {
 						areasCtl.dropArea(area)
 					},
+					error: (err) => {
+						errCtl.err("Cannot remove area: " + err.message)
+					},
 			})
 		},
 
@@ -393,6 +428,9 @@ var pointsCtl = new Vue({
 					success: (x) => {
 						pointsCtl.dropPoint(pnt)
 					},
+					error: (err) => {
+						errCtl.err("Cannot remove point: " + err.message)
+					},
 			})
 		},
 
@@ -441,7 +479,6 @@ var timelineCtl = new Vue({
 			backendRq({
 				url: '/visits',
 				method: 'GET',
-				type: 'json',
 				success: (data) => {
 					timelineCtl.state = "ready"
 					if (data.array) {
@@ -452,6 +489,9 @@ var timelineCtl = new Vue({
 						})
 						timelineCtl.sortVisited()
 					}
+				},
+				error: (err) => {
+					errCtl.err("Cannot load visits: " + err.message)
 				},
 			})
 		},
@@ -496,7 +536,6 @@ var propsCtl = new Vue({
 			backendRq({
 				url: '/visits?id=' + pt.id,
 				method: 'GET',
-				type: 'json',
 				success: (data) => {
 					if (data.array) {
 						data.array.forEach((v, i) => {
@@ -505,6 +544,9 @@ var propsCtl = new Vue({
 						})
 						propsCtl.sortVisited()
 					}
+				},
+				error: (err) => {
+					errCtl.err("Cannot load visits: " + err.message)
 				},
 			})
 		},
@@ -546,6 +588,9 @@ var propsCtl = new Vue({
 				success: (data) => {
 					propsCtl.commit(nv)
 				},
+				error: (err) => {
+					errCtl.err("Cannot save visit: " + err.message)
+				},
 			})
 		},
 
@@ -555,6 +600,9 @@ var propsCtl = new Vue({
 				method: 'DELETE',
 				success: (data) => {
 					propsCtl.dropVisit(i)
+				},
+				error: (err) => {
+					errCtl.err("Cannot remove visit: " + err.message)
 				},
 			})
 		},
@@ -578,7 +626,6 @@ function dateScore(date) {
 backendRq({
 		url: '/geos',
 		method: 'GET',
-		type: 'json',
 		success: (data) => {
 			if (data.areas) {
 				data.areas.forEach((item, i) => {
@@ -591,6 +638,9 @@ backendRq({
 					pointsLayer.addPoint(item)
 				})
 			}
+		},
+		error: (err) => {
+			errCtl.err("Cannot load points and areas: " + err.message)
 		},
 })
 

@@ -68,3 +68,8 @@ body {
   display: grid;
   grid-template-columns: 95% 5%;
 }
+
+.error {
+  font-style: italic;
+  color: red;
+}

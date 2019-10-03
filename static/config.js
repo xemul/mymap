@@ -22,6 +22,7 @@ const placeDIcon = L.icon({
 	iconAnchor:	[ 8, 23],
 })
 
+const errorTimeout = 3000
 const highlightTimeout = 1000
 const highlightZoom = 7
 
