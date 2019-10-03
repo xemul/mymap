@@ -10,4 +10,8 @@ type Storage interface {
 	RemoveVisit(int, int) (bool, error)
 }
 
-var storage = &LocalJsonStorage{}
+func storage(c *Claims) Storage {
+	return &LocalJsonStorage{
+		name: c.UserId,
+	}
+}

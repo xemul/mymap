@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 )
 
-const (
-	localFileName	= "points.json"
-)
-
 type LocalJsonStorage struct {
+	name	string
 	lock	sync.RWMutex
+}
+
+func (s *LocalJsonStorage)filename() string {
+	return s.name + ".data.json"
 }
 
 func (s *LocalJsonStorage)SavePoint(sv *SavePointReq) error {
@@ -185,7 +186,7 @@ func (s *LocalJsonStorage)RemoveVisit(pid, vn int) (bool, error) {
 }
 
 func (s *LocalJsonStorage)loadFromFile() (*LocalJsonFile, error) {
-	f, err := os.Open(localFileName)
+	f, err := os.Open(s.filename())
 	if err != nil {
 		if os.IsNotExist(err) {
 			return &LocalJsonFile{ }, nil
@@ -207,7 +208,7 @@ func (s *LocalJsonStorage)loadFromFile() (*LocalJsonFile, error) {
 }
 
 func (s *LocalJsonStorage)saveToFile(fc *LocalJsonFile) error {
-	f, err := os.OpenFile("." + localFileName, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
+	f, err := os.OpenFile("." + s.filename(), os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
@@ -224,5 +225,5 @@ func (s *LocalJsonStorage)saveToFile(fc *LocalJsonFile) error {
 		return err
 	}
 
-	return os.Rename(f.Name(), localFileName)
+	return os.Rename(f.Name(), s.filename())
 }
