@@ -41,6 +41,19 @@ var hidePointsToggle = new toggle(2,
 )
 
 backendRq = function(rq) {
+	if (menuCtl.sess == null) {
+		rq.error({message: "login not checked yet"})
+		return
+	}
+
+	if (menuCtl.sess.user == null) {
+		if (rq.method != 'GET') {
+			errCtl.warn("You're not logged in, data will not be saved")
+		}
+		rq.success({})
+		return
+	}
+
 	console.log("-[rq]->", rq)
 
 	switch (rq.method) {
@@ -104,12 +117,20 @@ var errCtl = new Vue({
 	el: '#errors',
 	data: {
 		message: "",
+		type: "",
 	},
 	methods: {
 		err: (txt) => {
 			console.log(txt)
+			errCtl.type = "error"
 			errCtl.message = txt
 			setTimeout(() => { errCtl.message = "" }, errorTimeout)
+		},
+
+		warn: (txt) => {
+			errCtl.type = "warning"
+			errCtl.message = txt
+			setTimeout(() => { errCtl.message = ""}, errorTimeout)
 		},
 	},
 })
@@ -620,26 +641,6 @@ function dateScore(date) {
 // On-load
 //
 
-backendRq({
-		url: '/geos',
-		method: 'GET',
-		success: (data) => {
-			if (data.areas) {
-				data.areas.forEach((item, i) => {
-					item.state = "loading"
-					areasLayer.addArea(item)
-				})
-			}
-			if (data.points) {
-				data.points.forEach((item, i) => {
-					pointsLayer.addPoint(item)
-				})
-			}
-		},
-		error: (err) => {
-			errCtl.err("Cannot load points and areas: " + err.message)
-		},
-})
 
 axios.get('/creds').
 	then((resp) => {
@@ -647,6 +648,8 @@ axios.get('/creds').
 		menuCtl.sess = {
 			user: resp.data
 		}
+
+		loadGeos()
 	}).
 	catch((err) => {
 		console.log("Auth FAILED", err)
@@ -654,3 +657,26 @@ axios.get('/creds').
 			user: null
 		}
 	})
+
+function loadGeos() {
+	backendRq({
+			url: '/geos',
+			method: 'GET',
+			success: (data) => {
+				if (data.areas) {
+					data.areas.forEach((item, i) => {
+						item.state = "loading"
+						areasLayer.addArea(item)
+					})
+				}
+				if (data.points) {
+					data.points.forEach((item, i) => {
+						pointsLayer.addPoint(item)
+					})
+				}
+			},
+			error: (err) => {
+				errCtl.err("Cannot load points and areas: " + err.message)
+			},
+	})
+}

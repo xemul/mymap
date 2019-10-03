@@ -103,7 +103,8 @@
 		</div>
 	</div>
 	<div id="errors" v-if="message != ''">
-		<span class="error"> {{message}} </span>
+		<span v-if="type == 'error'" class="error"> {{message}} </span>
+		<span v-if="type == 'warning'" class="warning"> {{message}} </span>
 	</div>
 	<div id="pprops" v-if="point != null">
 		<hr>

@@ -70,6 +70,11 @@ body {
 }
 
 .error {
-  font-style: italic;
+  font-style: bold;
   color: red;
+}
+
+.warning {
+  font-style: italic;
+  color: blue;
 }
