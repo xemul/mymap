@@ -4,6 +4,9 @@ const bodyParser = require('body-parser');
 const passport = require('passport');
 const auth = require('./auth');
 const session = require('express-session');
+const jwt = require('jsonwebtoken');
+
+const tokenKey = new Buffer(process.env.JWT_SIGN_KEY, 'base64')
 
 auth(passport)
 
@@ -40,12 +43,20 @@ app.get('/auth/google', passport.authenticate('google', {
 app.get('/auth/google/callback', passport.authenticate('google', {
 		failureRedirect: '/',
 	}), (req, res) => {
-		console.log('Logged in as ', req.user.profile)
-		req.session.user = {
+		let user = {
 			id: req.user.profile.id,
 			name: req.user.profile.displayName,
 			emails: req.user.profile.emails,
 		}
+
+		console.log('Logged in ', user)
+
+		user.token = jwt.sign( {
+				id: "google." + user.id,
+				exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60),
+			}, tokenKey)
+
+		req.session.user = user
 		res.redirect('/')
 	}
 )

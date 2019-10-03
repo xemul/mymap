@@ -1,13 +1,22 @@
 package main
 
 import (
+	"os"
 	"log"
+	"errors"
 	"strconv"
 	"net/http"
 	"encoding/json"
+	"encoding/base64"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/handlers"
+	"github.com/dgrijalva/jwt-go"
 )
+
+type Claims struct {
+	*jwt.StandardClaims
+	UserId	string		`json:"id"`
+}
 
 func handleListGeos(w http.ResponseWriter, r *http.Request) {
 	load, err := storage.LoadGeos()
@@ -65,7 +74,7 @@ func handleForgetGeos(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handleGeos(w http.ResponseWriter, r *http.Request) {
+func handleGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		handleListGeos(w, r)
@@ -128,7 +137,7 @@ func handleDeleteVisit(w http.ResponseWriter, r *http.Request, id int) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handleVisits(w http.ResponseWriter, r *http.Request) {
+func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query()["id"]
 	ptid := -1
 
@@ -158,16 +167,54 @@ func handleVisits(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func main() {
-	r := mux.NewRouter()
-	r.HandleFunc("/geos", handleGeos).Methods("GET", "POST", "DELETE", "OPTIONS")
-	r.HandleFunc("/visits", handleVisits).Methods("GET", "POST", "DELETE", "OPTIONS")
+type auth func(*Claims, http.ResponseWriter, *http.Request)
 
-	headersOk := handlers.AllowedHeaders([]string{"Content-Type"})
+func (fn auth)ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	token := r.Header.Get("Authorization")
+	if token == "" {
+		http.Error(w, "no token", http.StatusUnauthorized)
+		return
+	}
+
+	tok, err := jwt.ParseWithClaims(token, &Claims{},
+		func(tok *jwt.Token) (interface{}, error) {
+			if _, ok := tok.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New("Unexpected sign method")
+			}
+
+			return tokenKey, nil
+		})
+	if err != nil {
+		log.Printf("Bad token: %s", err.Error())
+		http.Error(w, "bad token", http.StatusUnauthorized)
+		return
+	}
+
+	c := tok.Claims.(*Claims)
+	log.Printf("%s/%s @%s\n", r.Method, r.URL.Path, c.UserId)
+	fn(c, w, r)
+}
+
+var tokenKey []byte
+
+func main() {
+	var err error
+
+	tokenKey, err = base64.StdEncoding.DecodeString(os.Getenv("JWT_SIGN_KEY"))
+	if err != nil || len(tokenKey) == 0 {
+		log.Printf("No JWT key provided")
+		return
+	}
+
+	r := mux.NewRouter()
+	r.Handle("/geos", auth(handleGeos)).Methods("GET", "POST", "DELETE", "OPTIONS")
+	r.Handle("/visits", auth(handleVisits)).Methods("GET", "POST", "DELETE", "OPTIONS")
+
+	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "POST", "DELETE", "HEAD", "OPTIONS"})
 
-	err := http.ListenAndServe("0.0.0.0:8082",
+	err = http.ListenAndServe("0.0.0.0:8082",
 			handlers.CORS(originsOk, headersOk, methodsOk)(r))
 	if err != nil {
 		log.Fatalf("Cannot start HTTP server: %s", err.Error())

@@ -55,24 +55,14 @@ backendRq = function(rq) {
 	}
 
 	console.log("-[rq]->", rq)
-
-	switch (rq.method) {
-	case 'GET':
-		axios.get(apiserver + rq.url).
-			then((resp) => { rq.success(resp.data) }).
-			catch((err) => { rq.error(err) })
-		break
-	case 'POST':
-		axios.post(apiserver + rq.url, rq.data).
-			then((resp) => { rq.success(resp.data) }).
-			catch((err) => { rq.error(err) })
-		break
-	case 'DELETE':
-		axios.delete(apiserver + rq.url).
-			then((resp) => { rq.success(resp.data) }).
-			catch((err) => { rq.error(err) })
-		break
-	}
+	axios({
+		method: rq.method,
+		url: apiserver + rq.url,
+		data: rq.data,
+		headers: {
+			Authorization: menuCtl.sess.user.token,
+		},
+	}).then((resp) => { rq.success(resp.data) }).catch((err) => { rq.error(err) })
 }
 
 //
