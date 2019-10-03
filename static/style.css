@@ -58,8 +58,7 @@ body {
 }
 
 #login {
-  position: absolute;
-  right: 0;
+  float: right;
   padding-left: 8px;
   padding-right: 8px;
 }

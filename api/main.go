@@ -170,27 +170,39 @@ func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 type auth func(*Claims, http.ResponseWriter, *http.Request)
 
 func (fn auth)ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	token := r.Header.Get("Authorization")
-	if token == "" {
-		http.Error(w, "no token", http.StatusUnauthorized)
-		return
+	var c *Claims
+
+	if r.Method == "GET" {
+		viewmap := r.URL.Query()["viewmap"]
+		if len(viewmap) == 1 {
+			c = &Claims{ UserId: viewmap[0] }
+		}
 	}
 
-	tok, err := jwt.ParseWithClaims(token, &Claims{},
-		func(tok *jwt.Token) (interface{}, error) {
-			if _, ok := tok.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("Unexpected sign method")
-			}
+	if c == nil {
+		token := r.Header.Get("Authorization")
+		if token == "" {
+			http.Error(w, "no token", http.StatusUnauthorized)
+			return
+		}
 
-			return tokenKey, nil
-		})
-	if err != nil {
-		log.Printf("Bad token: %s", err.Error())
-		http.Error(w, "bad token", http.StatusUnauthorized)
-		return
+		tok, err := jwt.ParseWithClaims(token, &Claims{},
+			func(tok *jwt.Token) (interface{}, error) {
+				if _, ok := tok.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, errors.New("Unexpected sign method")
+				}
+
+				return tokenKey, nil
+			})
+		if err != nil {
+			log.Printf("Bad token: %s", err.Error())
+			http.Error(w, "bad token", http.StatusUnauthorized)
+			return
+		}
+
+		c = tok.Claims.(*Claims)
 	}
 
-	c := tok.Claims.(*Claims)
 	log.Printf("%s/%s @%s\n", r.Method, r.URL.Path, c.UserId)
 	fn(c, w, r)
 }

@@ -11,7 +11,7 @@ const tokenKey = new Buffer(process.env.JWT_SIGN_KEY, 'base64')
 
 auth(passport)
 
-app.use(session({ secret: process.env.SESSION_SECRET, cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false }));
+app.use(session({ secret: process.env.SESSION_SECRET, cookie: { }, resave: false, saveUninitialized: false }));
 app.use(passport.initialize())
 app.use(express.static('static'))
 app.use(bodyParser.json())

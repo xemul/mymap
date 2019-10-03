@@ -53,20 +53,47 @@ backendRq = function(rq) {
 		return
 	}
 
+	let headers = {}
+
 	if (menuCtl.sess.user == null) {
-		errCtl.warn("You're not logged in, data will not be saved")
-		rq.success({})
-		return
+		if (rq.method != 'GET') {
+			errCtl.warn("You're not logged in, data will not be saved")
+			rq.success({})
+			return
+		}
+
+		if (!config.viewmap) {
+			rq.success({})
+			return
+		}
+	} else {
+		headers = {
+			Authorization: menuCtl.sess.user.token,
+		}
+	}
+
+	let url = config.backend + rq.url
+
+	if (rq.method == 'GET' && config.viewmap) {
+		console.log("-[viewmap]->", config.viewmap)
+
+		if (!rq.q) {
+			rq.q = []
+		}
+
+		rq.q.push('viewmap=' + config.viewmap)
+	}
+
+	if (rq.q) {
+		url += '?' + rq.q.join('&')
 	}
 
 	console.log("-[rq]->", rq)
 	axios({
 		method: rq.method,
-		url: config.backend + rq.url,
+		url: url,
 		data: rq.data,
-		headers: {
-			Authorization: menuCtl.sess.user.token,
-		},
+		headers: headers,
 	}).then((resp) => { rq.success(resp.data) }).catch((err) => { rq.error(err) })
 }
 
@@ -97,6 +124,7 @@ var menuCtl = new Vue({
 	el: '#menu',
 	data: {
 		sess: null,
+		viewmap: null,
 	},
 	methods: {
 		showAreas: () => { hidebar.show("areas") },
@@ -372,7 +400,8 @@ var areasCtl = new Vue({
 
 		removeArea: (ev, area) => {
 			backendRq({
-					url: '/geos?type=area&id=' + area.id,
+					url: '/geos',
+					q: [ 'type=area', 'id=' + area.id ],
 					method: 'DELETE',
 					success: (x) => {
 						areasCtl.dropArea(area)
@@ -436,7 +465,8 @@ var pointsCtl = new Vue({
 
 		removePoint: (ev, pnt) => {
 			backendRq({
-					url: '/geos?type=point&id=' + pnt.id,
+					url: '/geos',
+					q: [ 'type=point', 'id=' + pnt.id ],
 					method: 'DELETE',
 					success: (x) => {
 						pointsCtl.dropPoint(pnt)
@@ -547,7 +577,8 @@ var propsCtl = new Vue({
 			propsCtl.clearNv()
 
 			backendRq({
-				url: '/visits?id=' + pt.id,
+				url: '/visits',
+				q: [ 'id=' + pt.id ],
 				method: 'GET',
 				success: (data) => {
 					if (data.array) {
@@ -594,7 +625,8 @@ var propsCtl = new Vue({
 			}
 
 			backendRq({
-				url: '/visits?id=' + propsCtl.point.id,
+				url: '/visits',
+				q: [ 'id=' + propsCtl.point.id ],
 				method: 'POST',
 				contentType: 'application/json',
 				data: JSON.stringify(nv),
@@ -609,7 +641,8 @@ var propsCtl = new Vue({
 
 		removeVisit: (ev, i) => {
 			backendRq({
-				url: '/visits?id=' + propsCtl.point.id + '&vn=' + propsCtl.visited[i].idx,
+				url: '/visits',
+				q: [ 'id=' + propsCtl.point.id, 'vn=' + propsCtl.visited[i].idx ],
 				method: 'DELETE',
 				success: (data) => {
 					propsCtl.dropVisit(i)
@@ -640,24 +673,34 @@ axios.get('/config')
 	.then((resp) => {
 		config = resp.data
 		console.log("config: ", config)
+		if (config.viewmap) {
+			menuCtl.viewmap = config.viewmap
+		}
+		login()
 	})
 	.catch((err) => { errCtl.warn("failed to load config") })
 
-axios.get('/creds').
-	then((resp) => {
-		console.log("authorized as ", resp.data.id)
-		menuCtl.sess = {
-			user: resp.data
-		}
+function login() {
+	axios.get('/creds').
+		then((resp) => {
+			console.log("authorized as ", resp.data.id)
+			menuCtl.sess = {
+				user: resp.data
+			}
 
-		loadGeos()
-	}).
-	catch((err) => {
-		console.log("anonymous mode")
-		menuCtl.sess = {
-			user: null
-		}
-	})
+			loadGeos()
+		}).
+		catch((err) => {
+			console.log("anonymous mode")
+			menuCtl.sess = {
+				user: null
+			}
+
+			if (config.viewmap) {
+				loadGeos()
+			}
+		})
+}
 
 function loadGeos() {
 	backendRq({
