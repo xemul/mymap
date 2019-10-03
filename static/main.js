@@ -246,17 +246,14 @@ mymap.on('click', (e) => {
 	markerLayer.move(e.latlng)
 	selectionCtl.move(e.latlng)
 
-	reqwest({
-		url: 'https://global.mapit.mysociety.org/point/4326/'+e.latlng.lng+','+e.latlng.lat,
-		method: 'GET',
-		crossOrigin: true,
-		success: (data) => {
-			selectionCtl.setAvailable(data)
-		},
-		error: (e) => {
+	axios.get('https://global.mapit.mysociety.org/point/4326/'+e.latlng.lng+','+e.latlng.lat).
+		then((resp) => {
+			selectionCtl.setAvailable(resp.data)
+		}).
+		catch((err) => {
+			errCtl.err("cannot find areas at the point: " + err.message)
 			markerCtl.clearMarker()
-		},
-	})
+		})
 })
 
 //
@@ -306,21 +303,21 @@ var markerCtl = new Vue({
 var areasLayer = areasLayer || {};
 areasLayer.loaded = L.featureGroup().addTo(mymap);
 
-areasLayer.area_loaded = function(data) {
+areasLayer.areaLoaded = function(area, data) {
 	var style = {
 		"weight": 0.01,
 		"color": areaColor,
 	};
-	var area = new L.GeoJSON(data, { style: style });
-	area.on('dblclick', function(e) {
+	var lr = new L.GeoJSON(data, { style: style });
+	lr.on('dblclick', function(e) {
 	    var z = mymap.getZoom() + (e.originalEvent.shiftKey ? -1 : 1);
 	    mymap.setZoomAround(e.containerPoint, z);
 	});
 
-	areasLayer.loaded.addLayer(area)
-	areasCtl.updateArea(this.area, L.stamp(area))
+	areasLayer.loaded.addLayer(lr)
+	areasCtl.updateArea(area, L.stamp(lr))
 
-	console.log("Loaded " + this.area.name)
+	console.log("Loaded " + area.name)
 };
 
 areasLayer.addArea = function(area) {
@@ -328,13 +325,13 @@ areasLayer.addArea = function(area) {
 		console.log("Requesting ", area.name);
 		areasCtl.addArea(area)
 
-		reqwest({
-			url: 'https://global.mapit.mysociety.org/area/' + area.id + '.geojson?simplify_tolerance=0.0001',
-			type: 'json',
-			area: area,
-			success: areasLayer.area_loaded,
-			crossOrigin: true
-		});
+		axios.get('https://global.mapit.mysociety.org/area/' + area.id + '.geojson?simplify_tolerance=0.0001').
+			then((resp) => {
+				areasLayer.areaLoaded(area, resp.data)
+			}).
+			catch((err) => {
+				errCtl.err("cannot load area: " + err.message)
+			})
 	}
 }
 
@@ -644,19 +641,16 @@ backendRq({
 		},
 })
 
-reqwest({
-	url: '/creds',
-	type: 'json',
-	success: (data) => {
-		console.log("Auth OK", data)
+axios.get('/creds').
+	then((resp) => {
+		console.log("Auth OK", resp.data)
 		menuCtl.sess = {
-			user: data
+			user: resp.data
 		}
-	},
-	error: (err) => {
+	}).
+	catch((err) => {
 		console.log("Auth FAILED", err)
 		menuCtl.sess = {
 			user: null
 		}
-	},
-})
+	})
