@@ -46,7 +46,7 @@ var hidePointsToggle = new toggle(2,
 
 var hidebar = { n: "" }
 
-function showHidebar(w) {
+hidebar.show = (w) => {
 	if (hidebar.n == "") {
 		mapCtl.resize("50%", mapHeight)
 	}
@@ -54,7 +54,7 @@ function showHidebar(w) {
 	hidebar.n = w
 }
 
-function closeHidebar() {
+hidebar.close = () => {
 	hidebar.n = ""
 	mapCtl.resize(mapWidth, mapHeight)
 }
@@ -67,6 +67,14 @@ var menuCtl = new Vue({
 	el: '#menu',
 	data: {
 		sess: null,
+	},
+	methods: {
+		showAreas: () => { hidebar.show("areas") },
+		showPoints: () => { hidebar.show("points") },
+		showTimeline: () => {
+			hidebar.show("timeline")
+			timelineCtl.load()
+		},
 	},
 })
 
@@ -257,14 +265,6 @@ var markerCtl = new Vue({
 // Areas
 //
 
-function showAreas() {
-	showHidebar("areas")
-}
-
-function closeAreas() {
-	closeHidebar()
-}
-
 var areasLayer = areasLayer || {};
 areasLayer.loaded = L.featureGroup().addTo(mymap);
 
@@ -332,21 +332,15 @@ var areasCtl = new Vue({
 			areasLayer.loaded.removeLayer(area.layer)
 			areasCtl.$delete(areasCtl.loaded, area.id)
 			areasCtl.nr -= 1
-		}
+		},
+
+		closeAreas: () => { hidebar.close() },
 	},
 })
 
 //
 // Points
 //
-
-function showPoints() {
-	showHidebar("points")
-}
-
-function closePoints() {
-	closeHidebar()
-}
 
 var pointsLayer = pointsLayer || {}
 pointsLayer.loaded = L.layerGroup().addTo(mymap);
@@ -355,7 +349,7 @@ pointsLayer.addPoint = function(pt) {
 	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(pointsLayer.loaded)
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
 	pt.marker.on('click', function(e) {
-		showPropPoint(pt)
+		propsCtl.showPoint(pt)
 	})
 	pointsCtl.addPoint(pt)
 }
@@ -408,43 +402,14 @@ var pointsCtl = new Vue({
 			}
 			pointsCtl.nr -= 1
 		},
+
+		closePoints: () => { hidebar.close() },
 	},
 })
 
 //
 // Timeline
 //
-
-function showTimeline() {
-	showHidebar("timeline")
-
-	timelineCtl.state = "loading"
-	timelineCtl.visited = []
-
-	reqwest({
-		url: apiserver + '/visits',
-		method: 'GET',
-		type: 'json',
-		crossOrigin: true,
-		success: (data) => {
-			timelineCtl.state = "ready"
-			if (data.array) {
-				data.array.forEach((v, i) => {
-					v.pt = allPoints[v.point]
-					v.idx = i
-					timelineCtl.visited.push(v)
-				})
-				timelineCtl.sortVisited()
-			}
-		},
-	})
-}
-
-function closeTimeline() {
-	timelineCtl.state = ""
-	timelineCtl.visited = []
-	closeHidebar()
-}
 
 var timelineCtl = new Vue({
 	el: '#timeline',
@@ -460,20 +425,41 @@ var timelineCtl = new Vue({
 				return dateScore(b.date) - dateScore(a.date)
 			})
 		},
+
+		load: () => {
+			timelineCtl.state = "loading"
+			timelineCtl.visited = []
+
+			reqwest({
+				url: apiserver + '/visits',
+				method: 'GET',
+				type: 'json',
+				crossOrigin: true,
+				success: (data) => {
+					timelineCtl.state = "ready"
+					if (data.array) {
+						data.array.forEach((v, i) => {
+							v.pt = allPoints[v.point]
+							v.idx = i
+							timelineCtl.visited.push(v)
+						})
+						timelineCtl.sortVisited()
+					}
+				},
+			})
+		},
+
+		closeTimeline: () => {
+			timelineCtl.state = ""
+			timelineCtl.visited = []
+			hidebar.close()
+		},
 	},
 })
 
 //
 // Props
 //
-
-function showPropPoint(pt) {
-	propsCtl.showPoint(pt)
-}
-
-function clearPropPoint(e) {
-	propsCtl.clearPoint()
-}
 
 var propsCtl = new Vue({
 	el: '#pprops',
@@ -484,7 +470,7 @@ var propsCtl = new Vue({
 		nvTags: "",
 	},
 	methods: {
-		clearPoint: () => {
+		closeProps: () => {
 			propsCtl.point = null
 			propsCtl.visited = []
 			propsCtl.clearNv()
@@ -539,7 +525,42 @@ var propsCtl = new Vue({
 				return dateScore(b.date) - dateScore(a.date)
 			})
 		},
-	}
+
+		addVisit: () => {
+			let nv = {
+				date: propsCtl.nvDate,
+				tags: propsCtl.nvTags.split(/\s*,\s*/),
+			}
+
+			reqwest({
+				url: apiserver + '/visits?id=' + propsCtl.point.id,
+				method: 'POST',
+				contentType: 'application/json',
+				data: JSON.stringify(nv),
+				crossOrigin: true,
+				success: (data) => {
+					propsCtl.commit(nv)
+				},
+				error: (err) => {
+					console.log("canot save visit", err)
+				},
+			})
+		},
+
+		removeVisit: (ev, i) => {
+			reqwest({
+				url: apiserver + '/visits?id=' + propsCtl.point.id + '&vn=' + propsCtl.visited[i].idx,
+				method: 'DELETE',
+				crossOrigin: true,
+				success: (data) => {
+					propsCtl.dropVisit(i)
+				},
+				error: (err) => {
+					console.log("canot remove visit", err)
+				},
+			})
+		},
+	},
 })
 
 function dateScore(date) {
@@ -550,41 +571,6 @@ function dateScore(date) {
 	let d = parseInt(ds.pop()) || 0
 
 	return ((y * 12) + m) * 32 + d
-}
-
-function addVisit() {
-	let nv = {
-		date: propsCtl.nvDate,
-		tags: propsCtl.nvTags.split(/\s*,\s*/),
-	}
-
-	reqwest({
-		url: apiserver + '/visits?id=' + propsCtl.point.id,
-		method: 'POST',
-		contentType: 'application/json',
-		data: JSON.stringify(nv),
-		crossOrigin: true,
-		success: (data) => {
-			propsCtl.commit(nv)
-		},
-		error: (err) => {
-			console.log("canot save visit", err)
-		},
-	})
-}
-
-function removeVisit(ev, i) {
-	reqwest({
-		url: apiserver + '/visits?id=' + propsCtl.point.id + '&vn=' + propsCtl.visited[i].idx,
-		method: 'DELETE',
-		crossOrigin: true,
-		success: (data) => {
-			propsCtl.dropVisit(i)
-		},
-		error: (err) => {
-			console.log("canot remove visit", err)
-		},
-	})
 }
 
 //
