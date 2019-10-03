@@ -1,76 +1,7 @@
-function loadSelected() {
-	var rq = {
-		areas: selectionCtl.selected
-	}
-
-	if (selectionCtl.pointName) {
-		rq.point = {
-			id: Math.floor(Math.random() * 1000000),
-			name: selectionCtl.pointName,
-			lat: markerCtl.latlng.lat,
-			lng: markerCtl.latlng.lng,
-			countries: markerCtl.inside.countries,
-			area: markerCtl.inside.area,
-		}
-	}
-
-	reqwest({
-		url: apiserver + '/geos',
-		method: 'POST',
-		contentType: 'application/json',
-		data: JSON.stringify(rq),
-		crossOrigin: true,
-		success: (x) => {
-			console.log("Added to backend");
-		},
-	})
-
-	rq.areas.forEach((item, i) => { areasLayer.addArea(item) })
-	if (rq.point) {
-		pointsLayer.addPoint(rq.point)
-	}
-
-	markerLayer.remove()
-	selectionCtl.clearSelection()
-}
-
-function removeArea(ev, area) {
-	reqwest({
-			url: apiserver + '/geos?type=area&id=' + area.id,
-			method: 'DELETE',
-			crossOrigin: true,
-			success: (x) => {
-				console.log("Removed area from backend")
-			},
-	})
-
-	areasLayer.loaded.removeLayer(area.layer)
-	areasCtl.dropArea(area)
-}
-
-function removePoint(ev, pnt) {
-	reqwest({
-			url: apiserver + '/geos?type=point&id=' + pnt.id,
-			method: 'DELETE',
-			crossOrigin: true,
-			success: (x) => {
-				console.log("Removed point from backend")
-			},
-	})
-
-	pointsLayer.loaded.removeLayer(pnt.marker)
-	pointsCtl.dropPoint(pnt)
-}
-
 function highlightPoint(ev, pnt) {
 	mymap.setView(pnt, highlightZoom)
 	pnt.marker.setIcon(placeDIcon)
 	setTimeout(() => { pnt.marker.setIcon(placeIcon) }, highlightTimeout)
-}
-
-function clearMarker(ev) {
-	markerLayer.remove()
-	selectionCtl.clearSelection()
 }
 
 class toggle {
@@ -197,6 +128,43 @@ var selectionCtl = new Vue({
 			selectionCtl.available = areas
 			markerCtl.inside = inside
 		},
+
+
+		loadSelected: () => {
+			var rq = {
+				areas: selectionCtl.selected
+			}
+
+			if (selectionCtl.pointName) {
+				rq.point = {
+					id: Math.floor(Math.random() * 1000000),
+					name: selectionCtl.pointName,
+					lat: markerCtl.latlng.lat,
+					lng: markerCtl.latlng.lng,
+					countries: markerCtl.inside.countries,
+					area: markerCtl.inside.area,
+				}
+			}
+
+			reqwest({
+				url: apiserver + '/geos',
+				method: 'POST',
+				contentType: 'application/json',
+				data: JSON.stringify(rq),
+				crossOrigin: true,
+				success: (x) => {
+					console.log("Added to backend");
+				},
+			})
+
+			rq.areas.forEach((item, i) => { areasLayer.addArea(item) })
+			if (rq.point) {
+				pointsLayer.addPoint(rq.point)
+			}
+
+			markerLayer.remove()
+			selectionCtl.clearSelection()
+		},
 	}
 })
 
@@ -240,7 +208,7 @@ mymap.on('click', (e) => {
 			selectionCtl.setAvailable(data)
 		},
 		error: (e) => {
-			clearMarker()
+			markerCtl.clearMarker()
 		},
 	})
 })
@@ -276,6 +244,12 @@ var markerCtl = new Vue({
 	data: {
 		latlng: null,
 		inside: [],
+	},
+	methods: {
+		clearMarker: (ev) => {
+			markerLayer.remove()
+			selectionCtl.clearSelection()
+		},
 	},
 })
 
@@ -345,11 +319,20 @@ var areasCtl = new Vue({
 			areasCtl.$set(areasCtl.loaded, area.id, area)
 		},
 
-		dropArea: (area) => {
+		removeArea: (ev, area) => {
+			reqwest({
+					url: apiserver + '/geos?type=area&id=' + area.id,
+					method: 'DELETE',
+					crossOrigin: true,
+					success: (x) => {
+						console.log("Removed area from backend")
+					},
+			})
+
+			areasLayer.loaded.removeLayer(area.layer)
 			areasCtl.$delete(areasCtl.loaded, area.id)
 			areasCtl.nr -= 1
-		},
-
+		}
 	},
 })
 
@@ -402,19 +385,29 @@ var pointsCtl = new Vue({
 			pointsCtl.nr += 1
 		},
 
-		dropPoint: (pt) => {
-			let bkey = pt.countries.join(',')
+		removePoint: (ev, pnt) => {
+			reqwest({
+					url: apiserver + '/geos?type=point&id=' + pnt.id,
+					method: 'DELETE',
+					crossOrigin: true,
+					success: (x) => {
+						console.log("Removed point from backend")
+					},
+			})
+
+			pointsLayer.loaded.removeLayer(pnt.marker)
+
+			let bkey = pnt.countries.join(',')
 			var bucket = pointsCtl.loaded[bkey]
 
-			delete(allPoints, pt.id)
-			Vue.delete(bucket, pt.id)
+			delete(allPoints, pnt.id)
+			Vue.delete(bucket, pnt.id)
 
 			if (Object.keys(bucket).length == 0) {
 				pointsCtl.$delete(pointsCtl.loaded, bkey)
 			}
 			pointsCtl.nr -= 1
 		},
-
 	},
 })
 
