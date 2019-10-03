@@ -40,6 +40,12 @@ var hidePointsToggle = new toggle(2,
 	}
 )
 
+backendRq = function(rq) {
+	rq.url = apiserver + rq.url
+	rq.crossOrigin = true
+	reqwest(rq)
+}
+
 //
 // Hidebar stuff
 //
@@ -137,7 +143,6 @@ var selectionCtl = new Vue({
 			markerCtl.inside = inside
 		},
 
-
 		loadSelected: () => {
 			var rq = {
 				areas: selectionCtl.selected
@@ -154,12 +159,11 @@ var selectionCtl = new Vue({
 				}
 			}
 
-			reqwest({
-				url: apiserver + '/geos',
+			backendRq({
+				url: '/geos',
 				method: 'POST',
 				contentType: 'application/json',
 				data: JSON.stringify(rq),
-				crossOrigin: true,
 				success: (x) => {
 					console.log("Added to backend");
 				},
@@ -320,10 +324,9 @@ var areasCtl = new Vue({
 		},
 
 		removeArea: (ev, area) => {
-			reqwest({
-					url: apiserver + '/geos?type=area&id=' + area.id,
+			backendRq({
+					url: '/geos?type=area&id=' + area.id,
 					method: 'DELETE',
-					crossOrigin: true,
 					success: (x) => {
 						console.log("Removed area from backend")
 					},
@@ -380,10 +383,9 @@ var pointsCtl = new Vue({
 		},
 
 		removePoint: (ev, pnt) => {
-			reqwest({
-					url: apiserver + '/geos?type=point&id=' + pnt.id,
+			backendRq({
+					url: '/geos?type=point&id=' + pnt.id,
 					method: 'DELETE',
-					crossOrigin: true,
 					success: (x) => {
 						console.log("Removed point from backend")
 					},
@@ -430,11 +432,10 @@ var timelineCtl = new Vue({
 			timelineCtl.state = "loading"
 			timelineCtl.visited = []
 
-			reqwest({
-				url: apiserver + '/visits',
+			backendRq({
+				url: '/visits',
 				method: 'GET',
 				type: 'json',
-				crossOrigin: true,
 				success: (data) => {
 					timelineCtl.state = "ready"
 					if (data.array) {
@@ -486,11 +487,10 @@ var propsCtl = new Vue({
 			propsCtl.visited = []
 			propsCtl.clearNv()
 
-			reqwest({
-				url: apiserver + '/visits?id=' + pt.id,
+			backendRq({
+				url: '/visits?id=' + pt.id,
 				method: 'GET',
 				type: 'json',
-				crossOrigin: true,
 				success: (data) => {
 					if (data.array) {
 						data.array.forEach((v, i) => {
@@ -532,12 +532,11 @@ var propsCtl = new Vue({
 				tags: propsCtl.nvTags.split(/\s*,\s*/),
 			}
 
-			reqwest({
-				url: apiserver + '/visits?id=' + propsCtl.point.id,
+			backendRq({
+				url: '/visits?id=' + propsCtl.point.id,
 				method: 'POST',
 				contentType: 'application/json',
 				data: JSON.stringify(nv),
-				crossOrigin: true,
 				success: (data) => {
 					propsCtl.commit(nv)
 				},
@@ -548,10 +547,9 @@ var propsCtl = new Vue({
 		},
 
 		removeVisit: (ev, i) => {
-			reqwest({
-				url: apiserver + '/visits?id=' + propsCtl.point.id + '&vn=' + propsCtl.visited[i].idx,
+			backendRq({
+				url: '/visits?id=' + propsCtl.point.id + '&vn=' + propsCtl.visited[i].idx,
 				method: 'DELETE',
-				crossOrigin: true,
 				success: (data) => {
 					propsCtl.dropVisit(i)
 				},
@@ -577,11 +575,10 @@ function dateScore(date) {
 // On-load
 //
 
-reqwest({
-		url: apiserver + '/geos',
+backendRq({
+		url: '/geos',
 		method: 'GET',
 		type: 'json',
-		crossOrigin: true,
 		success: (data) => {
 			if (data.areas) {
 				data.areas.forEach((item, i) => {
