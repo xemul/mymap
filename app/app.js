@@ -5,6 +5,7 @@ const passport = require('passport');
 const auth = require('./auth');
 const session = require('express-session');
 const jwt = require('jsonwebtoken');
+const parseURL = require('parseurl');
 
 const tokenKey = new Buffer(process.env.JWT_SIGN_KEY, 'base64')
 
@@ -23,6 +24,23 @@ app.get('/logout', (req, res) => {
 	req.logout();
 	req.session.user = null;
 	res.redirect('/');
+})
+
+app.get('/config', (req, res) => {
+	res.json({
+		viewmap: req.session.viewmap,
+		backend: 'http://localhost:8082',
+	})
+})
+
+app.get('/map/*', (req, res) => {
+	let map = parseURL(req).pathname.substring(5)
+	if (map == 'my') {
+		req.session.viewmap = ""
+	} else {
+		req.session.viewmap = map
+	}
+	res.redirect('/')
 })
 
 app.get('/creds', (req, res) => {

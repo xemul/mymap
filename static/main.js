@@ -1,3 +1,5 @@
+let config = {}
+
 function highlightPoint(ev, pnt) {
 	mymap.setView(pnt, highlightZoom)
 	pnt.marker.setIcon(placeDIcon)
@@ -41,15 +43,18 @@ var hidePointsToggle = new toggle(2,
 )
 
 backendRq = function(rq) {
+	if (!config.backend) {
+		rq.warn("config load error")
+		return
+	}
+
 	if (menuCtl.sess == null) {
 		rq.error({message: "login not checked yet"})
 		return
 	}
 
 	if (menuCtl.sess.user == null) {
-		if (rq.method != 'GET') {
-			errCtl.warn("You're not logged in, data will not be saved")
-		}
+		errCtl.warn("You're not logged in, data will not be saved")
 		rq.success({})
 		return
 	}
@@ -57,7 +62,7 @@ backendRq = function(rq) {
 	console.log("-[rq]->", rq)
 	axios({
 		method: rq.method,
-		url: apiserver + rq.url,
+		url: config.backend + rq.url,
 		data: rq.data,
 		headers: {
 			Authorization: menuCtl.sess.user.token,
@@ -631,10 +636,16 @@ function dateScore(date) {
 // On-load
 //
 
+axios.get('/config')
+	.then((resp) => {
+		config = resp.data
+		console.log("config: ", config)
+	})
+	.catch((err) => { errCtl.warn("failed to load config") })
 
 axios.get('/creds').
 	then((resp) => {
-		console.log("Auth OK", resp.data)
+		console.log("authorized as ", resp.data.id)
 		menuCtl.sess = {
 			user: resp.data
 		}
@@ -642,7 +653,7 @@ axios.get('/creds').
 		loadGeos()
 	}).
 	catch((err) => {
-		console.log("Auth FAILED", err)
+		console.log("anonymous mode")
 		menuCtl.sess = {
 			user: null
 		}

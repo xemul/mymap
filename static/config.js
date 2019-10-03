@@ -1,5 +1,3 @@
-var apiserver = "http://localhost:8082"
-
 const startAt = [ 55.0000, 40.0000 ]
 const areaColor = "#4041ff"
 const placeTolltipOpacity = 0.7
