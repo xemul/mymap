@@ -165,10 +165,12 @@ var selectionCtl = new Vue({
 				contentType: 'application/json',
 				data: JSON.stringify(rq),
 				success: (x) => {
-					console.log("Added to backend");
+					selectionCtl.commit(rq)
 				},
 			})
+		},
 
+		commit: (rq) => {
 			rq.areas.forEach((item, i) => { areasLayer.addArea(item) })
 			if (rq.point) {
 				pointsLayer.addPoint(rq.point)
@@ -328,10 +330,12 @@ var areasCtl = new Vue({
 					url: '/geos?type=area&id=' + area.id,
 					method: 'DELETE',
 					success: (x) => {
-						console.log("Removed area from backend")
+						areasCtl.dropArea(area)
 					},
 			})
+		},
 
+		dropArea: (area) => {
 			areasLayer.loaded.removeLayer(area.layer)
 			areasCtl.$delete(areasCtl.loaded, area.id)
 			areasCtl.nr -= 1
@@ -387,10 +391,12 @@ var pointsCtl = new Vue({
 					url: '/geos?type=point&id=' + pnt.id,
 					method: 'DELETE',
 					success: (x) => {
-						console.log("Removed point from backend")
+						pointsCtl.dropPoint(pnt)
 					},
 			})
+		},
 
+		dropPoint: (pnt) => {
 			pointsLayer.loaded.removeLayer(pnt.marker)
 
 			let bkey = pnt.countries.join(',')
@@ -540,9 +546,6 @@ var propsCtl = new Vue({
 				success: (data) => {
 					propsCtl.commit(nv)
 				},
-				error: (err) => {
-					console.log("canot save visit", err)
-				},
 			})
 		},
 
@@ -552,9 +555,6 @@ var propsCtl = new Vue({
 				method: 'DELETE',
 				success: (data) => {
 					propsCtl.dropVisit(i)
-				},
-				error: (err) => {
-					console.log("canot remove visit", err)
 				},
 			})
 		},
