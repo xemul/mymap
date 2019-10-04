@@ -404,9 +404,11 @@ var areasCtl = new Vue({
 				ret.push(a[1])
 			})
 			if (areasCtl.sorted.i != 0) {
-				let x = 1
-				if (areasCtl.sorted.i == 2) { x = -1 }
-				ret.sort((a, b) => { return strCmp(a.name, b.name) })
+				ret.sort((a, b) => {
+					let o = strCmp(a.name, b.name)
+					if (areasCtl.sorted.i == 2) { o = -o }
+					return o
+				})
 			}
 			return ret
 		},
@@ -451,6 +453,8 @@ var areasCtl = new Vue({
 // Points
 //
 
+sortPointNames = new toggle(3)
+
 var pointsLayer = pointsLayer || {}
 pointsLayer.lr = L.layerGroup().addTo(mymap);
 
@@ -470,6 +474,7 @@ var pointsCtl = new Vue({
 		nr: 0,
 		hide: hidePointsToggle,
 		show: hidebar,
+		sortedN: sortPointNames,
 	},
 	computed: {
 		loadedS: () => {
@@ -490,7 +495,13 @@ var pointsCtl = new Vue({
 
 			Object.entries(buckets).forEach((e) => {
 				let pts = e[1]
-				pts.sort((a,b) => { return strCmp(a.name, b.name) })
+				if (sortPointNames.i != 0) {
+					pts.sort((a,b) => {
+						let o = strCmp(a.name, b.name)
+						if (sortPointNames.i == 2) { o = -o }
+						return o
+					})
+				}
 				ret.push({country: e[0], pts: pts})
 			})
 

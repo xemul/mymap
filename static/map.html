@@ -51,6 +51,11 @@
 			<img v-if="hide.i == 0" src="static/img/show.svg">
 			<img v-if="hide.i == 1" src="static/img/hide.svg">
 		</a>
+			<a href="#" v-on:click="sortedN.toggle()">
+				<img v-if="sortedN.i == 0" src="static/img/unsort.svg">
+				<img v-if="sortedN.i == 1" src="static/img/sort.svg">
+				<img v-if="sortedN.i == 2" src="static/img/sort-r.svg">
+			</a>
 		<ul>
 			<li v-for="plist in loadedS">
 				{{plist.country}} <small>[{{plist.pts.length}}]</small>
