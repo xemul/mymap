@@ -4,6 +4,7 @@ type Area struct {
 	Id		int			`json:"id"`
 	Name		string			`json:"name"`
 	Type		string			`json:"type"`
+	Countries	[]string		`json:"countries"`
 }
 
 type Point struct {
