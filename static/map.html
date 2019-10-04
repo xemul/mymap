@@ -6,15 +6,15 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-	<link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
-	<link rel="manifest" href="/img/site.webmanifest">
+	<link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon-16x16.png">
+	<link rel="manifest" href="/static/img/site.webmanifest">
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
 	<script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
 	<script src="https://cdn.jsdelivr.net/npm/vue"></script>
 	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="static/style.css">
 </head>
 <body>
 
@@ -26,7 +26,7 @@
 		<hr>
 		<div class="caption">
 		<div>Timeline</div>
-		<div><a href="#" v-on:click="closeTimeline($event)" align="right"><img src="img/close.svg"></a></div>
+		<div><a href="#" v-on:click="closeTimeline($event)" align="right"><img src="static/img/close.svg"></a></div>
 		</div>
 		<div v-if="state != 'ready'">
 			<small>{{state}}...</small>
@@ -34,7 +34,7 @@
 		<table id="visitable">
 		<tr v-for="(vis, idx) in visited">
 			<td align="right">{{vis.date}}</td>
-			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="img/locate.svg"></a></td>
+			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="static/img/locate.svg"></a></td>
 			<td width="100%">{{vis.pt.name}}</td>
 			<td>{{vis.tags.join(" ")}}</td>
 		</tr>
@@ -45,20 +45,20 @@
 		<div class="caption">
 		<div>Points
 			<a href="#" v-on:click="hide.toggle($event)">
-				<img v-if="hide.i == 0" src="img/show.svg">
-				<img v-if="hide.i == 1" src="img/hide.svg">
+				<img v-if="hide.i == 0" src="static/img/show.svg">
+				<img v-if="hide.i == 1" src="static/img/hide.svg">
 			</a>
 		</div>
-		<div><a href="#" v-on:click="closePoints($event)" align="right"><img src="img/close.svg"></a></div>
+		<div><a href="#" v-on:click="closePoints($event)" align="right"><img src="static/img/close.svg"></a></div>
 		</div>
 		<ul>
 			<li v-for="(bkt, tag) in loaded">
 				{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
 				<ul>
 				<li v-for="pnt in bkt">
-					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="img/locate.svg"></a>
+					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="static/img/locate.svg"></a>
 					{{pnt.name}}
-					<a href="#" v-on:click="removePoint($event, pnt)"><img src="img/remove.svg"></a>
+					<a href="#" v-on:click="removePoint($event, pnt)"><img src="static/img/remove.svg"></a>
 				</li>
 				</ul>
 			</li>
@@ -68,7 +68,7 @@
 		<hr>
 		<div class="caption">
 		<div>Areas</div>
-		<div><a href="#" v-on:click="closeAreas($event)" align="right"><img src="img/close.svg"></a></div>
+		<div><a href="#" v-on:click="closeAreas($event)" align="right"><img src="static/img/close.svg"></a></div>
 		</div>
 		<ul>
 			<li v-for="area in loaded">
@@ -77,7 +77,7 @@
 					<small>{{area.state}}...</small>
 				</span>
 				<span v-if="area.state == 'ready'">
-					<a href="#" v-on:click="removeArea($event, area)"><img src="img/remove.svg"></a>
+					<a href="#" v-on:click="removeArea($event, area)"><img src="static/img/remove.svg"></a>
 				</span>
 			</li>
 		</ul>
@@ -89,31 +89,35 @@
 <div id="sidebar">
 	<div id="menu">
 		<div id="login">
-			<span v-if="sess == null"><img src="img/more.svg"></span>
+			<span v-if="viewmap != null">
+				<img src="static/img/show.svg" title="view mode">
+			</span>
+			<span v-if="sess == null"><img src="static/img/more.svg"></span>
 			<span v-if="sess != null">
 				<span v-if="sess.user == null"><a href="/login">login</a></span>
 				<span v-if="sess.user != null">{{sess.user.name}}&nbsp;<a href="/logout">(logout)</a></span>
 			</span>
-			<span v-if="viewmap != null">
-				<br><img src="img/show.svg">{{viewmap}}
-			</span>
 		</div>
 
 		<div id="other">
-			<a href="#" v-on:click="showTimeline($event)"><img src="img/timeline.svg"></a>
-			<a href="#" v-on:click="showPoints($event)"><img src="img/points.svg"></a>
-			<a href="#" v-on:click="showAreas($event)"><img src="img/areas.svg"></a>
+			<a href="#" v-on:click="showTimeline($event)"><img src="static/img/timeline.svg" title="Timeline"></a>
+			<a href="#" v-on:click="showPoints($event)"><img src="static/img/points.svg" title="Points"></a>
+			<a href="#" v-on:click="showAreas($event)"><img src="static/img/areas.svg" title="Areas"></a>
+			<span v-if="share != ''">
+				<a href="#" v-bind:href="share"><img src="static/img/share.svg" title="Link to this map"></a>
+			</span>
 		</div>
 	</div>
-	<div id="errors" v-if="message != ''">
+	<div id="status" v-if="message != ''">
 		<span v-if="type == 'error'" class="error"> {{message}} </span>
 		<span v-if="type == 'warning'" class="warning"> {{message}} </span>
+		<span v-if="type == 'info'" class="info"> {{message}} </span>
 	</div>
 	<div id="pprops" v-if="point != null">
 		<hr>
 		<div class="caption">
-		<div><img src="img/place.svg"> {{point.name}}</div>
-		<div><a href="#" v-on:click="closeProps($event)" align="right"><img src="img/close.svg"></a></div>
+		<div><img src="static/img/place.svg"> {{point.name}}</div>
+		<div><a href="#" v-on:click="closeProps($event)" align="right"><img src="static/img/close.svg"></a></div>
 		</div>
 
 		<table id="sumtable">
@@ -122,16 +126,16 @@
 		<tr><td>Inside</td><td>{{point.area}}:{{point.countries.join(",")}}</td></tr>
 		</table>
 
-		<br><img src="img/visit.svg"><br>
+		<br><img src="static/img/visit.svg"><br>
 		<input v-model="nvDate" placeholder="dd/mm/yyyy">
 		<input v-model="nvTags" placeholder="tag, ...">
-		<a href="#" v-on:click="addVisit($event)"><img src="img/add.svg"></a>
+		<a href="#" v-on:click="addVisit($event)"><img src="static/img/add.svg"></a>
 
 		<table id="visitable">
 		<tr v-for="(vis, idx) in visited">
 			<td align="right">{{vis.date}}</td>
 			<td width="100%">{{vis.tags.join(" ")}}</td>
-			<td><a href="#" v-on:click="removeVisit($event, idx)"><img src="img/remove.svg"></a></td>
+			<td><a href="#" v-on:click="removeVisit($event, idx)"><img src="static/img/remove.svg"></a></td>
 			<td><small>{{idx}}:{{vis.idx}}</small></td>
 		</tr>
 		</table>
@@ -140,17 +144,17 @@
 		<hr>
 		<div class="caption">
 		<div>
-			<img src="img/point.svg">
+			<img src="static/img/point.svg">
 			{{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
 			<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
 		</div>
-		<div><a href="#" v-on:click="clearMarker($event)"><img src="img/close.svg"></a></div>
+		<div><a href="#" v-on:click="clearMarker($event)"><img src="static/img/close.svg"></a></div>
 		</div>
 	</div>
 	<div id="selection" v-if="available.length != 0">
 		<table border=0>
 		<tr>
-			<td valign="top"><img src="img/area.svg"></td>
+			<td valign="top"><img src="static/img/area.svg"></td>
 			<td>
 			<template v-for="area in available">
 				<div v-if="show.show(area)">
@@ -164,16 +168,16 @@
 			<td></td>
 			<td>
 			<a href="#" v-on:click="show.toggle($event)">
-				<img v-if="show.i == 0" src="img/more.svg">
-				<img v-if="show.i == 1" src="img/less.svg">
+				<img v-if="show.i == 0" src="static/img/more.svg">
+				<img v-if="show.i == 1" src="static/img/less.svg">
 			</a>
 			</td>
 		</tr>
 		<tr>
-			<td valign="top"><img src="img/place.svg"></td>
+			<td valign="top"><img src="static/img/place.svg"></td>
 			<td>
 			<input v-model="pointName" placeholder="enter the point name">
-			<a href="#" v-on:click="loadSelected($event)"><img src="img/add.svg"></a>
+			<a href="#" v-on:click="loadSelected($event)"><img src="static/img/add.svg"></a>
 			</td>
 		</tr>
 		</table>
@@ -181,7 +185,7 @@
 </div>
 </div>
 
-<script src="/config.js"></script>
-<script src="/main.js"></script>
+<script src="/static/config.js"></script>
+<script src="/static/main.js"></script>
 </body>
 </html>

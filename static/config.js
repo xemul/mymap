@@ -3,19 +3,19 @@ const areaColor = "#4041ff"
 const placeTolltipOpacity = 0.7
 
 const pointIcon = L.icon({
-	iconUrl:	'img/point.svg',
+	iconUrl:	'static/img/point.svg',
 	iconSize:	[20, 30],
 	iconAnchor:	[10, 29],
 })
 
 const placeIcon = L.icon({
-	iconUrl:	'img/place.svg',
+	iconUrl:	'static/img/place.svg',
 	iconSize:	[14, 21],
 	iconAnchor:	[ 7, 20],
 })
 
 const placeDIcon = L.icon({
-	iconUrl:	'img/place-d.svg',
+	iconUrl:	'static/img/place-d.svg',
 	iconSize:	[16, 24],
 	iconAnchor:	[ 8, 23],
 })

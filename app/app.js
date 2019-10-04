@@ -13,17 +13,23 @@ auth(passport)
 
 app.use(session({ secret: process.env.SESSION_SECRET, cookie: { }, resave: false, saveUninitialized: false }));
 app.use(passport.initialize())
-app.use(express.static('static'))
+app.use('/static', express.static('static'))
 app.use(bodyParser.json())
 
-app.get('/login', (req, res) => {
-	res.redirect('/auth/google')
+app.get('/', (req, res) => {
+	res.redirect('/map')
 })
 
-app.get('/logout', (req, res) => {
-	req.logout();
-	req.session.user = null;
-	res.redirect('/');
+app.get('/map', (req, res) => {
+	let map = req.query.viewmap
+
+	if (!map || map == 'my') {
+		req.session.viewmap = ""
+	} else {
+		req.session.viewmap = map
+	}
+
+	res.sendFile(__dirname + '/static/map.html')
 })
 
 app.get('/config', (req, res) => {
@@ -33,14 +39,14 @@ app.get('/config', (req, res) => {
 	})
 })
 
-app.get('/map/*', (req, res) => {
-	let map = parseURL(req).pathname.substring(5)
-	if (map == 'my') {
-		req.session.viewmap = ""
-	} else {
-		req.session.viewmap = map
-	}
-	res.redirect('/')
+app.get('/login', (req, res) => {
+	res.redirect('/auth/google')
+})
+
+app.get('/logout', (req, res) => {
+	req.logout();
+	req.session.user = null;
+	res.redirect('/');
 })
 
 app.get('/creds', (req, res) => {
@@ -62,7 +68,7 @@ app.get('/auth/google/callback', passport.authenticate('google', {
 		failureRedirect: '/',
 	}), (req, res) => {
 		let user = {
-			id: req.user.profile.id,
+			id: 'google.' + req.user.profile.id,
 			name: req.user.profile.displayName,
 			emails: req.user.profile.emails,
 		}
@@ -70,7 +76,7 @@ app.get('/auth/google/callback', passport.authenticate('google', {
 		console.log('Logged in ', user)
 
 		user.token = jwt.sign( {
-				id: "google." + user.id,
+				id: user.id,
 				exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60),
 			}, tokenKey)
 

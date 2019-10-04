@@ -48,25 +48,31 @@ backendRq = function(rq) {
 		return
 	}
 
-	if (menuCtl.sess == null) {
-		rq.error({message: "login not checked yet"})
-		return
-	}
-
 	let headers = {}
 
-	if (menuCtl.sess.user == null) {
-		if (rq.method != 'GET') {
-			errCtl.warn("You're not logged in, data will not be saved")
+	if (config.viewmap) {
+		if (rq.method != "GET") {
+			statusCtl.warn("View mode, data will not be saved")
 			rq.success({})
 			return
 		}
 
-		if (!config.viewmap) {
+		if (!rq.q) {
+			rq.q = []
+		}
+		rq.q.push('viewmap=' + config.viewmap)
+	} else {
+		if (menuCtl.sess == null) {
+			rq.error({message: "login not checked yet"})
+			return
+		}
+
+		if (menuCtl.sess.user == null) {
+			statusCtl.warn("You're not logged in, data will not be saved")
 			rq.success({})
 			return
 		}
-	} else {
+
 		headers = {
 			Authorization: menuCtl.sess.user.token,
 		}
@@ -74,21 +80,10 @@ backendRq = function(rq) {
 
 	let url = config.backend + rq.url
 
-	if (rq.method == 'GET' && config.viewmap) {
-		console.log("-[viewmap]->", config.viewmap)
-
-		if (!rq.q) {
-			rq.q = []
-		}
-
-		rq.q.push('viewmap=' + config.viewmap)
-	}
-
 	if (rq.q) {
 		url += '?' + rq.q.join('&')
 	}
 
-	console.log("-[rq]->", rq)
 	axios({
 		method: rq.method,
 		url: url,
@@ -125,6 +120,7 @@ var menuCtl = new Vue({
 	data: {
 		sess: null,
 		viewmap: null,
+		share: "",
 	},
 	methods: {
 		showAreas: () => { hidebar.show("areas") },
@@ -136,24 +132,35 @@ var menuCtl = new Vue({
 	},
 })
 
-var errCtl = new Vue({
-	el: '#errors',
+var statusCtl = new Vue({
+	el: '#status',
 	data: {
 		message: "",
 		type: "",
+		url: "",
 	},
 	methods: {
 		err: (txt) => {
 			console.log(txt)
-			errCtl.type = "error"
-			errCtl.message = txt
-			setTimeout(() => { errCtl.message = "" }, errorTimeout)
+			statusCtl.type = "error"
+			statusCtl.message = txt
+			setTimeout(() => { statusCtl.clear() }, errorTimeout)
 		},
 
 		warn: (txt) => {
-			errCtl.type = "warning"
-			errCtl.message = txt
-			setTimeout(() => { errCtl.message = ""}, errorTimeout)
+			statusCtl.type = "warning"
+			statusCtl.message = txt
+			setTimeout(() => { statusCtl.clear() }, errorTimeout)
+		},
+
+		info: (txt) => {
+			statusCtl.type = "info"
+			statusCtl.message = txt
+		},
+
+		clear: () => {
+			statusCtl.type = ""
+			statusCtl.message = ""
 		},
 	},
 })
@@ -241,7 +248,7 @@ var selectionCtl = new Vue({
 					selectionCtl.commit(rq)
 				},
 				error: (err) => {
-					errCtl.err("Cannot save point: " + err.message)
+					statusCtl.err("Cannot save point: " + err.message)
 				},
 			})
 		},
@@ -295,7 +302,7 @@ mymap.on('click', (e) => {
 			selectionCtl.setAvailable(resp.data)
 		}).
 		catch((err) => {
-			errCtl.err("cannot find areas at the point: " + err.message)
+			statusCtl.err("cannot find areas at the point: " + err.message)
 			markerCtl.clearMarker()
 		})
 })
@@ -360,13 +367,10 @@ areasLayer.areaLoaded = function(area, data) {
 
 	areasLayer.loaded.addLayer(lr)
 	areasCtl.updateArea(area, L.stamp(lr))
-
-	console.log("Loaded " + area.name)
 };
 
 areasLayer.addArea = function(area) {
 	if (!areasCtl.loaded[area.id]) {
-		console.log("Requesting ", area.name);
 		areasCtl.addArea(area)
 
 		axios.get('https://global.mapit.mysociety.org/area/' + area.id + '.geojson?simplify_tolerance=0.0001').
@@ -374,7 +378,7 @@ areasLayer.addArea = function(area) {
 				areasLayer.areaLoaded(area, resp.data)
 			}).
 			catch((err) => {
-				errCtl.err("cannot load area: " + err.message)
+				statusCtl.err("cannot load area: " + err.message)
 			})
 	}
 }
@@ -407,7 +411,7 @@ var areasCtl = new Vue({
 						areasCtl.dropArea(area)
 					},
 					error: (err) => {
-						errCtl.err("Cannot remove area: " + err.message)
+						statusCtl.err("Cannot remove area: " + err.message)
 					},
 			})
 		},
@@ -472,7 +476,7 @@ var pointsCtl = new Vue({
 						pointsCtl.dropPoint(pnt)
 					},
 					error: (err) => {
-						errCtl.err("Cannot remove point: " + err.message)
+						statusCtl.err("Cannot remove point: " + err.message)
 					},
 			})
 		},
@@ -534,7 +538,7 @@ var timelineCtl = new Vue({
 					}
 				},
 				error: (err) => {
-					errCtl.err("Cannot load visits: " + err.message)
+					statusCtl.err("Cannot load visits: " + err.message)
 				},
 			})
 		},
@@ -590,7 +594,7 @@ var propsCtl = new Vue({
 					}
 				},
 				error: (err) => {
-					errCtl.err("Cannot load visits: " + err.message)
+					statusCtl.err("Cannot load visits: " + err.message)
 				},
 			})
 		},
@@ -634,7 +638,7 @@ var propsCtl = new Vue({
 					propsCtl.commit(nv)
 				},
 				error: (err) => {
-					errCtl.err("Cannot save visit: " + err.message)
+					statusCtl.err("Cannot save visit: " + err.message)
 				},
 			})
 		},
@@ -648,7 +652,7 @@ var propsCtl = new Vue({
 					propsCtl.dropVisit(i)
 				},
 				error: (err) => {
-					errCtl.err("Cannot remove visit: " + err.message)
+					statusCtl.err("Cannot remove visit: " + err.message)
 				},
 			})
 		},
@@ -678,7 +682,7 @@ axios.get('/config')
 		}
 		login()
 	})
-	.catch((err) => { errCtl.warn("failed to load config") })
+	.catch((err) => { statusCtl.warn("failed to load config") })
 
 function login() {
 	axios.get('/creds').
@@ -689,6 +693,9 @@ function login() {
 			}
 
 			loadGeos()
+			if (config.viewmap == "") {
+				menuCtl.share = "/map?viewmap=" + menuCtl.sess.user.id
+			}
 		}).
 		catch((err) => {
 			console.log("anonymous mode")
@@ -720,7 +727,7 @@ function loadGeos() {
 				}
 			},
 			error: (err) => {
-				errCtl.err("Cannot load points and areas: " + err.message)
+				statusCtl.err("Cannot load points and areas: " + err.message)
 			},
 	})
 }
