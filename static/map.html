@@ -87,11 +87,11 @@
 		<ul>
 			<li v-for="area in loadedS">
 				<td><a href="#" v-on:click="highlightArea($event, area)"><img src="static/img/locate.svg"></a></td>
-				{{area.name}}
 				<template v-for="c in area.countries">
 					<img v-bind:src="'static/img/flags/' + c.toLowerCase() + '.svg'"
 							class="flag" v-bind:alt='c' v-bind:title='c'>
 				</template>
+				{{area.name}}
 				<span v-if="area.state != 'ready'">
 					<small>{{area.state}}...</small>
 				</span>
