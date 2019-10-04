@@ -90,12 +90,18 @@
 				<img v-if="sorted.i == 1" src="static/img/sort.svg">
 				<img v-if="sorted.i == 2" src="static/img/sort-r.svg">
 			</a>
+			<a href="#" v-if="pc != ''" v-on:click="preferCountry($event, '')">
+				<img v-bind:src="'static/img/flags/' + pc.toLowerCase() + '.svg'"
+						class="flag" v-bind:alt='pc' v-bind:title='pc'>
+			</a>
 		<ul>
 			<li v-for="area in loadedS">
 				<td><a href="#" v-on:click="highlightArea($event, area)"><img src="static/img/locate.svg"></a></td>
 				<template v-for="c in area.countries">
+					<a href="#" v-on:click="preferCountry($event, c)">
 					<img v-bind:src="'static/img/flags/' + c.toLowerCase() + '.svg'"
 							class="flag" v-bind:alt='c' v-bind:title='c'>
+					</a>
 				</template>
 				{{area.name}}
 				<span v-if="area.state != 'ready'">

@@ -396,6 +396,7 @@ var areasCtl = new Vue({
 		nr: 0,
 		show: hidebar,
 		sorted: sortAreas,
+		pc: "",
 	},
 	computed: {
 		loadedS: () => {
@@ -405,6 +406,21 @@ var areasCtl = new Vue({
 			})
 			if (areasCtl.sorted.i != 0) {
 				ret.sort((a, b) => {
+					if (areasCtl.pc != "") {
+						let ina = false
+						let inb = false
+
+						a.countries.forEach((c) => { if (c == areasCtl.pc) { ina = true }})
+						b.countries.forEach((c) => { if (c == areasCtl.pc) { inb = true }})
+
+						if (ina && !inb) {
+							return -1;
+						}
+						if (inb && !ina) {
+							return 1;
+						}
+					}
+
 					let o = strCmp(a.name, b.name)
 					if (areasCtl.sorted.i == 2) { o = -o }
 					return o
@@ -414,6 +430,10 @@ var areasCtl = new Vue({
 		},
 	},
 	methods: {
+		preferCountry: (ev, c) => {
+		       areasCtl.pc = c
+		},
+
 		addArea: (area) => {
 			areasCtl.$set(areasCtl.loaded, area.id, area)
 			areasCtl.nr += 1
