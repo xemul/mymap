@@ -52,10 +52,10 @@
 			<img v-if="hide.i == 1" src="static/img/hide.svg">
 		</a>
 		<ul>
-			<li v-for="(bkt, tag) in loaded">
-				{{tag}} <small>[{{Object.keys(bkt).length}}]</small>
+			<li v-for="plist in loadedS">
+				{{plist.country}} <small>[{{plist.pts.length}}]</small>
 				<ul>
-				<li v-for="pnt in bkt">
+				<li v-for="pnt in plist.pts">
 					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="static/img/locate.svg"></a>
 					{{pnt.name}}
 					<a href="#" v-on:click="removePoint($event, pnt)"><img src="static/img/remove.svg"></a>

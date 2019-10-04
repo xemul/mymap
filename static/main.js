@@ -42,9 +42,9 @@ showTypesToggle.show = function(area) {
 var hidePointsToggle = new toggle(2,
 	function() {
 		if (hidePointsToggle.i == 0) {
-			mymap.addLayer(pointsLayer.loaded)
+			mymap.addLayer(pointsLayer.lr)
 		} else {
-			mymap.removeLayer(pointsLayer.loaded)
+			mymap.removeLayer(pointsLayer.lr)
 		}
 	}
 )
@@ -219,15 +219,7 @@ var selectionCtl = new Vue({
 					smallest = area
 				}
 			})
-			areas.sort((a,b)=>{
-				if (a.type > b.type) {
-					return 1
-				} else if (a.type < b.type) {
-					return -1
-				} else {
-					return 0
-				}
-			})
+			areas.sort((a,b) => { return strCmp(a.type, b.type) })
 
 			let inside = { countries: [] }
 
@@ -368,7 +360,7 @@ var markerCtl = new Vue({
 //
 
 var areasLayer = areasLayer || {};
-areasLayer.loaded = L.featureGroup().addTo(mymap);
+areasLayer.lr = L.featureGroup().addTo(mymap);
 
 areasLayer.areaLoaded = function(area, data) {
 	var lr = new L.GeoJSON(data, { style: areaStyle });
@@ -377,7 +369,7 @@ areasLayer.areaLoaded = function(area, data) {
 	    mymap.setZoomAround(e.containerPoint, z);
 	});
 
-	areasLayer.loaded.addLayer(lr)
+	areasLayer.lr.addLayer(lr)
 	areasCtl.updateArea(area, lr)
 };
 
@@ -414,11 +406,7 @@ var areasCtl = new Vue({
 			if (areasCtl.sorted.i != 0) {
 				let x = 1
 				if (areasCtl.sorted.i == 2) { x = -1 }
-				ret.sort((a, b) => {
-					if (a.name > b.name) { return x }
-					else if (a.name < b.name) { return -x }
-					else { return 0 }
-				})
+				ret.sort((a, b) => { return strCmp(a.name, b.name) })
 			}
 			return ret
 		},
@@ -450,7 +438,7 @@ var areasCtl = new Vue({
 		},
 
 		dropArea: (area) => {
-			areasLayer.loaded.removeLayer(L.stamp(area.layer))
+			areasLayer.lr.removeLayer(L.stamp(area.layer))
 			areasCtl.$delete(areasCtl.loaded, area.id)
 			areasCtl.nr -= 1
 		},
@@ -464,18 +452,16 @@ var areasCtl = new Vue({
 //
 
 var pointsLayer = pointsLayer || {}
-pointsLayer.loaded = L.layerGroup().addTo(mymap);
+pointsLayer.lr = L.layerGroup().addTo(mymap);
 
 pointsLayer.addPoint = function(pt) {
-	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(pointsLayer.loaded)
+	pt.marker = L.marker(pt, {icon: placeIcon}).addTo(pointsLayer.lr)
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
 	pt.marker.on('click', function(e) {
 		propsCtl.showPoint(pt)
 	})
 	pointsCtl.addPoint(pt)
 }
-
-var allPoints = {}
 
 var pointsCtl = new Vue({
 	el: '#points',
@@ -485,18 +471,37 @@ var pointsCtl = new Vue({
 		hide: hidePointsToggle,
 		show: hidebar,
 	},
+	computed: {
+		loadedS: () => {
+			let buckets = {}
+
+			Object.entries(pointsCtl.loaded).forEach((a) => {
+				let pt = a[1]
+				let bkey = pt.countries.join(',')
+
+				if (!buckets[bkey]) {
+					buckets[bkey] = []
+				}
+
+				buckets[bkey].push(pt)
+			})
+
+			let ret = []
+
+			Object.entries(buckets).forEach((e) => {
+				let pts = e[1]
+				pts.sort((a,b) => { return strCmp(a.name, b.name) })
+				ret.push({country: e[0], pts: pts})
+			})
+
+			ret.sort((a,b) => { return b.pts.length - a.pts.length })
+
+			return ret
+		},
+	},
 	methods: {
 		addPoint: (pt) => {
-			let bkey = pt.countries.join(',')
-			var bucket = pointsCtl.loaded[bkey]
-
-			if (!bucket) {
-				pointsCtl.$set(pointsCtl.loaded, bkey, {})
-				bucket = pointsCtl.loaded[bkey]
-			}
-
-			Vue.set(bucket, pt.id, pt)
-			allPoints[pt.id] = pt
+			pointsCtl.$set(pointsCtl.loaded, pt.id, pt)
 			pointsCtl.nr += 1
 		},
 
@@ -515,17 +520,8 @@ var pointsCtl = new Vue({
 		},
 
 		dropPoint: (pnt) => {
-			pointsLayer.loaded.removeLayer(pnt.marker)
-
-			let bkey = pnt.countries.join(',')
-			var bucket = pointsCtl.loaded[bkey]
-
-			delete(allPoints, pnt.id)
-			Vue.delete(bucket, pnt.id)
-
-			if (Object.keys(bucket).length == 0) {
-				pointsCtl.$delete(pointsCtl.loaded, bkey)
-			}
+			pointsLayer.lr.removeLayer(pnt.marker)
+			pointsCtl.$delete(pointsCtl.loaded, pnt.id)
 			pointsCtl.nr -= 1
 		},
 
@@ -563,7 +559,7 @@ var timelineCtl = new Vue({
 					timelineCtl.state = "ready"
 					if (data.array) {
 						data.array.forEach((v, i) => {
-							v.pt = allPoints[v.point]
+							v.pt = pointsCtl.loaded[v.point]
 							v.idx = i
 							timelineCtl.visited.push(v)
 						})
@@ -700,6 +696,16 @@ function dateScore(date) {
 	let d = parseInt(ds.pop()) || 0
 
 	return ((y * 12) + m) * 32 + d
+}
+
+function strCmp(a, b) {
+	if (a > b) {
+		return 1
+	} else if (a < b) {
+		return -1
+	} else {
+		return 0
+	}
 }
 
 //
