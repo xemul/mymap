@@ -485,24 +485,27 @@ var pointsCtl = new Vue({
 				let bkey = pt.countries.join(',')
 
 				if (!buckets[bkey]) {
-					buckets[bkey] = []
+					buckets[bkey] = {
+						countries: pt.countries,
+						pts: [],
+					}
 				}
 
-				buckets[bkey].push(pt)
+				buckets[bkey].pts.push(pt)
 			})
 
 			let ret = []
 
 			Object.entries(buckets).forEach((e) => {
-				let pts = e[1]
+				let bkt = e[1]
 				if (sortPointNames.i != 0) {
-					pts.sort((a,b) => {
+					bkt.pts.sort((a,b) => {
 						let o = strCmp(a.name, b.name)
 						if (sortPointNames.i == 2) { o = -o }
 						return o
 					})
 				}
-				ret.push({country: e[0], pts: pts})
+				ret.push(bkt)
 			})
 
 			ret.sort((a,b) => { return b.pts.length - a.pts.length })

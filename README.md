@@ -3,6 +3,8 @@ OSM-based map painter and visits keeper
 
 == To start ==
 
+* git clone https://github.com/hjnilsson/country-flags
+* cd static/img/ && ln -s .../country-flags
 * dd if=/dev/urandom bs=128 count=1 | base64 -w0 > key.txt
 * /* prepare google-config.txt in app/ dir */
 

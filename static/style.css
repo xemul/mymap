@@ -79,3 +79,8 @@ body {
 
 .info {
 }
+
+.flag {
+  border: 1px solid #ccc;
+  width: 24px;
+}
