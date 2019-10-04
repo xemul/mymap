@@ -1,6 +1,15 @@
 const startAt = [ 55.0000, 40.0000 ]
-const areaColor = "#4041ff"
 const placeTolltipOpacity = 0.7
+
+const areaStyle = {
+	"weight": 0.01,
+	"color": "#4041ff",
+}
+
+const areaHStyle = {
+	"weight": 0.02,
+	"color": "#7f7fff",
+}
 
 const pointIcon = L.icon({
 	iconUrl:	'static/img/point.svg',
@@ -23,6 +32,7 @@ const placeDIcon = L.icon({
 const errorTimeout = 3000
 const highlightTimeout = 1000
 const highlightZoom = 7
+const highlightAZoom = 4
 
 const mapWidth = "75%"
 const mapHeight = "98%"

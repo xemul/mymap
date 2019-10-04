@@ -72,6 +72,7 @@
 		Areas
 		<ul>
 			<li v-for="area in loaded">
+				<td><a href="#" v-on:click="highlightArea($event, area)"><img src="static/img/locate.svg"></a></td>
 				{{area.name}}
 				<span v-if="area.state != 'ready'">
 					<small>{{area.state}}...</small>

@@ -6,6 +6,13 @@ function highlightPoint(ev, pnt) {
 	setTimeout(() => { pnt.marker.setIcon(placeIcon) }, highlightTimeout)
 }
 
+function highlightArea(ev, area) {
+	let c = area.layer.getBounds().getCenter()
+	mymap.setView(c, highlightAZoom)
+	area.layer.setStyle(areaHStyle)
+	setTimeout(() => { area.layer.setStyle(areaStyle) }, highlightTimeout)
+}
+
 class toggle {
 	constructor(states, cb) {
 		this.states = states
@@ -364,18 +371,14 @@ var areasLayer = areasLayer || {};
 areasLayer.loaded = L.featureGroup().addTo(mymap);
 
 areasLayer.areaLoaded = function(area, data) {
-	var style = {
-		"weight": 0.01,
-		"color": areaColor,
-	};
-	var lr = new L.GeoJSON(data, { style: style });
+	var lr = new L.GeoJSON(data, { style: areaStyle });
 	lr.on('dblclick', function(e) {
 	    var z = mymap.getZoom() + (e.originalEvent.shiftKey ? -1 : 1);
 	    mymap.setZoomAround(e.containerPoint, z);
 	});
 
 	areasLayer.loaded.addLayer(lr)
-	areasCtl.updateArea(area, L.stamp(lr))
+	areasCtl.updateArea(area, lr)
 };
 
 areasLayer.addArea = function(area) {
@@ -426,7 +429,7 @@ var areasCtl = new Vue({
 		},
 
 		dropArea: (area) => {
-			areasLayer.loaded.removeLayer(area.layer)
+			areasLayer.loaded.removeLayer(L.stamp(area.layer))
 			areasCtl.$delete(areasCtl.loaded, area.id)
 			areasCtl.nr -= 1
 		},
