@@ -36,6 +36,12 @@
 		<tr v-for="(vis, idx) in visited">
 			<td align="right">{{vis.date}}</td>
 			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="static/img/locate.svg"></a></td>
+			<td>
+			<template v-for="c in vis.pt.countries">
+				<img v-bind:src="'static/img/flags/' + c.toLowerCase() + '.svg'"
+						class="flag" v-bind:alt='c' v-bind:title='c'>
+			</template>
+			</td>
 			<td width="100%">{{vis.pt.name}}</td>
 			<td>{{vis.tags.join(" ")}}</td>
 		</tr>
