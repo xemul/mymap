@@ -395,12 +395,33 @@ areasLayer.addArea = function(area) {
 	}
 }
 
+sortAreas = new toggle(3)
+
 var areasCtl = new Vue({
 	el: '#areas',
 	data: {
 		loaded: {},
 		nr: 0,
 		show: hidebar,
+		sorted: sortAreas,
+	},
+	computed: {
+		loadedS: () => {
+			let ret = []
+			Object.entries(areasCtl.loaded).forEach((a) => {
+				ret.push(a[1])
+			})
+			if (areasCtl.sorted.i != 0) {
+				let x = 1
+				if (areasCtl.sorted.i == 2) { x = -1 }
+				ret.sort((a, b) => {
+					if (a.name > b.name) { return x }
+					else if (a.name < b.name) { return -x }
+					else { return 0 }
+				})
+			}
+			return ret
+		},
 	},
 	methods: {
 		addArea: (area) => {
