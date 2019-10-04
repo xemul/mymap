@@ -63,9 +63,8 @@ body {
   padding-right: 8px;
 }
 
-.caption {
-  display: grid;
-  grid-template-columns: 95% 5%;
+.right {
+  float: right;
 }
 
 .error {
