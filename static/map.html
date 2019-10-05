@@ -37,10 +37,7 @@
 			<td align="right">{{vis.date}}</td>
 			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="static/img/locate.svg"></a></td>
 			<td>
-			<template v-for="c in vis.pt.countries">
-				<img v-bind:src="'static/img/flags/' + c.toLowerCase() + '.svg'"
-						class="flag" v-bind:alt='c' v-bind:title='c'>
-			</template>
+			<flaglist v-bind:list=vis.pt.countries></flaglist>
 			</td>
 			<td width="100%">{{vis.pt.name}}</td>
 			<td>{{vis.tags.join(" ")}}</td>
@@ -64,10 +61,7 @@
 			</a>
 		<ul>
 			<li v-for="bkt in loadedS">
-				<template v-for="c in bkt.countries">
-					<img v-bind:src="'static/img/flags/' + c.toLowerCase() + '.svg'"
-							class="flag" v-bind:alt='c' v-bind:title='c'>
-				</template>
+				<flaglist v-bind:list=bkt.countries></flaglist>
 				<small>[{{bkt.pts.length}}]</small>
 				<ul>
 				<li v-for="pnt in bkt.pts">
@@ -91,16 +85,14 @@
 				<img v-if="sorted.i == 2" src="static/img/sort-r.svg">
 			</a>
 			<a href="#" v-if="pc != ''" v-on:click="preferCountry($event, '')">
-				<img v-bind:src="'static/img/flags/' + pc.toLowerCase() + '.svg'"
-						class="flag" v-bind:alt='pc' v-bind:title='pc'>
+				<flagimg v-bind:country=pc></flagimg>
 			</a>
 		<ul>
 			<li v-for="area in loadedS">
 				<td><a href="#" v-on:click="highlightArea($event, area)"><img src="static/img/locate.svg"></a></td>
 				<template v-for="c in area.countries">
 					<a href="#" v-on:click="preferCountry($event, c)">
-					<img v-bind:src="'static/img/flags/' + c.toLowerCase() + '.svg'"
-							class="flag" v-bind:alt='c' v-bind:title='c'>
+					<flagimg v-bind:country=c></flagimg>
 					</a>
 				</template>
 				{{area.name}}
@@ -151,10 +143,7 @@
 		</div>
 
 		<img src="static/img/place.svg"> {{point.name}}
-		<template v-for="c in point.countries">
-			<img v-bind:src="'static/img/flags/' + c.toLowerCase() + '.svg'"
-					class="flag" v-bind:alt='c' v-bind:title='c'>
-		</template>
+		<flaglist v-bind:list=point.countries></flaglist>
 
 		<table id="sumtable">
 		<tr><td>Id</td><td>{{point.id}}</td></tr>

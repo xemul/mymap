@@ -99,6 +99,24 @@ backendRq = function(rq) {
 	}).then((resp) => { rq.success(resp.data) }).catch((err) => { rq.error(err) })
 }
 
+Vue.component('flagimg', {
+	props: ['country'],
+	template:
+		`<span>
+		<img v-bind:src="'static/img/flags/' + country + '.svg'" class="flag" v-bind:alt='country' v-bind:title='country'>
+		</span>`,
+})
+
+Vue.component('flaglist', {
+	props: ['list'],
+	template:
+		`<span>
+		<template v-for="f in list">
+			<img v-bind:src="'static/img/flags/' + f + '.svg'" class="flag" v-bind:alt='f' v-bind:title='f'>
+		</template>
+		</span>`,
+})
+
 //
 // Hidebar stuff
 //
@@ -175,7 +193,7 @@ var statusCtl = new Vue({
 function getCountries(area) {
 	let ret = []
 	if (area.countries) {
-		area.countries.forEach((item, i) => { ret.push(item.code) })
+		area.countries.forEach((item, i) => { ret.push(item.code.toLowerCase()) })
 	}
 	return ret
 }
