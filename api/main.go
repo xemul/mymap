@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"log"
+	"flag"
 	"errors"
 	"strconv"
 	"net/http"
@@ -13,14 +14,40 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
+var noValue = errors.New("no value")
+
+func qInt(r *http.Request, pn string) (int, error) {
+	x := r.URL.Query()[pn]
+	if len(x) == 1 {
+		return strconv.Atoi(x[0])
+	} else {
+		return -1, noValue
+	}
+}
+
 type Claims struct {
 	*jwt.StandardClaims
 	UserId	string		`json:"id"`
+	viewmap	string		`json:"-"`
 }
 
 func getMap(c *Claims, w http.ResponseWriter, r *http.Request) Geos {
-	mp, err := geos(c)
+	x := c.viewmap
+	if x == "" {
+		x = r.Header.Get("X-MapId")
+		if x == "" {
+			http.Error(w, "no mapid", http.StatusBadRequest)
+			return nil
+		}
+	}
 
+	mapid, err := strconv.Atoi(x)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return nil
+	}
+
+	mp, err := openMap(c.UserId, mapid)
 	if mp == nil {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -65,7 +92,7 @@ func handleSaveGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleForgetGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
-	areaId, err := strconv.Atoi(r.URL.Query()["id"][0])
+	areaId, err := qInt(r, "id")
 	if err != nil {
 		http.Error(w, "id must be integer", http.StatusBadRequest)
 		return
@@ -137,7 +164,7 @@ func handleSaveVisit(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
 }
 
 func handleDeleteVisit(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
-	vn, err := strconv.Atoi(r.URL.Query()["vn"][0])
+	vn, err := qInt(r, "vn")
 	if err != nil {
 		http.Error(w, "vn must be integer", http.StatusBadRequest)
 		return
@@ -164,21 +191,10 @@ func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.URL.Query()["id"]
-	ptid := -1
-
-	if len(id) == 0 {
-		if r.Method != "GET" {
-			http.Error(w, "no id given", http.StatusBadRequest)
-			return
-		}
-	} else {
-
-		var err error
-
-		ptid, err = strconv.Atoi(id[0])
-		if err != nil {
-			http.Error(w, "id must be integer", http.StatusBadRequest)
+	ptid, err := qInt(r, "id")
+	if err != nil {
+		if !(r.Method == "GET" && err == noValue) {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 	}
@@ -193,6 +209,24 @@ func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
+	maps, err := listMaps(c.UserId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(&LoadMapsResp{M: maps})
+}
+
+func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case "GET":
+		handleListMaps(c, w, r)
+	}
+}
+
 type auth func(*Claims, http.ResponseWriter, *http.Request)
 
 func (fn auth)ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -201,7 +235,7 @@ func (fn auth)ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		viewmap := r.URL.Query()["viewmap"]
 		if len(viewmap) == 1 {
-			c = &Claims{ UserId: viewmap[0] }
+			c = &Claims{ viewmap: viewmap[0] }
 		}
 	}
 
@@ -230,13 +264,21 @@ func (fn auth)ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("%s/%s @%s\n", r.Method, r.URL.Path, c.UserId)
+	if *debug {
+		log.Printf("q: %v\n", r.URL.Query())
+		log.Printf("h: %v\n", r.Header)
+	}
 	fn(c, w, r)
 }
 
 var tokenKey []byte
+var debug *bool
 
 func main() {
 	var err error
+
+	debug = flag.Bool("debug", false, "debug")
+	flag.Parse()
 
 	tokenKey, err = base64.StdEncoding.DecodeString(os.Getenv("JWT_SIGN_KEY"))
 	if err != nil || len(tokenKey) == 0 {
@@ -245,10 +287,11 @@ func main() {
 	}
 
 	r := mux.NewRouter()
+	r.Handle("/maps", auth(handleMaps)).Methods("GET", "OPTIONS")
 	r.Handle("/geos", auth(handleGeos)).Methods("GET", "POST", "DELETE", "OPTIONS")
 	r.Handle("/visits", auth(handleVisits)).Methods("GET", "POST", "DELETE", "OPTIONS")
 
-	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
+	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "Authorization", "X-MapId"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "POST", "DELETE", "HEAD", "OPTIONS"})
 

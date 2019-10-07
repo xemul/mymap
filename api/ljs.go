@@ -4,16 +4,15 @@ import (
 	"os"
 	"sync"
 	"errors"
+	"strconv"
+	"math/rand"
 	"encoding/json"
 )
 
 type LocalJsonGeos struct {
-	name	string
+	id	int
+	fname	string
 	lock	sync.RWMutex
-}
-
-func (s *LocalJsonGeos)filename() string {
-	return s.name + ".data.json"
 }
 
 func (s *LocalJsonGeos)SavePoint(sv *SaveGeoReq) error {
@@ -186,12 +185,8 @@ func (s *LocalJsonGeos)RemoveVisit(pid, vn int) (bool, error) {
 }
 
 func (s *LocalJsonGeos)loadFromFile() (*GeosFile, error) {
-	f, err := os.Open(s.filename())
+	f, err := os.Open(s.fname)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return &GeosFile{ }, nil
-		}
-
 		return nil, err
 	}
 
@@ -208,7 +203,7 @@ func (s *LocalJsonGeos)loadFromFile() (*GeosFile, error) {
 }
 
 func (s *LocalJsonGeos)saveToFile(fc *GeosFile) error {
-	f, err := os.OpenFile("." + s.filename(), os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
+	f, err := os.OpenFile("." + s.fname, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
@@ -225,5 +220,138 @@ func (s *LocalJsonGeos)saveToFile(fc *GeosFile) error {
 		return err
 	}
 
-	return os.Rename(f.Name(), s.filename())
+	return os.Rename(f.Name(), s.fname)
+}
+
+func localGeos(mapid int) *LocalJsonGeos {
+	return &LocalJsonGeos{
+		id: mapid,
+		fname: "map." + strconv.Itoa(mapid) + ".json",
+	}
+}
+
+func makeEmptyGeos() (*LocalJsonGeos, error) {
+	for i := 0; i < 256; i++ {
+		mapid := rand.Intn(1000000)
+		s := localGeos(mapid)
+
+		f, err := os.OpenFile(s.fname, os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0600)
+		if err != nil {
+			if err == os.ErrExist {
+				continue
+			}
+
+			return nil, err
+		}
+
+		defer func() {
+			f.Close()
+			if err != nil {
+				os.Remove(f.Name())
+			}
+		}()
+
+		err = json.NewEncoder(f).Encode(&GeosFile{})
+		return s, err
+	}
+
+	return nil, errors.New("storage busy")
+}
+
+func (s *LocalJsonGeos)Remove() error {
+	return os.Remove(s.fname)
+}
+
+func OpenLocalMap(uid string, mapid int) (*LocalJsonGeos, error) {
+	if uid != "" {
+		uf, err := loadUserFile(uid)
+		if err != nil {
+			return nil, err
+		}
+
+		_, ok := uf.Maps[mapid]
+		if !ok {
+			return nil, errors.New("no such map")
+		}
+	}
+
+	return localGeos(mapid), nil
+}
+
+func ListLocalMaps(uid string) ([]*Map, error) {
+	uf, err := loadUserFile(uid)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return nil, err
+		}
+
+		uf, err = makeUserFile(uid)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var ret []*Map
+
+	for _, m := range uf.Maps {
+		ret = append(ret, m)
+	}
+
+	return ret, nil
+}
+
+func loadUserFile(uid string) (*UserFile, error) {
+	f, err := os.Open(uid + ".json")
+	if err != nil {
+		return nil, err
+	}
+
+	defer f.Close()
+	var uf UserFile
+
+	err = json.NewDecoder(f).Decode(&uf)
+	if err != nil {
+		return nil, err
+	}
+
+	return &uf, nil
+}
+
+func makeUserFile(uid string) (*UserFile, error) {
+	geos, err := makeEmptyGeos()
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			geos.Remove()
+		}
+	}()
+
+	var f *os.File
+
+	f, err = os.OpenFile(uid + ".json", os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		f.Close()
+		if err != nil {
+			os.Remove(f.Name())
+		}
+	}()
+
+	uf := &UserFile{ Maps: map[int]*Map {
+			geos.id: &Map{ Id: geos.id },
+		},
+	}
+
+	err = json.NewEncoder(f).Encode(&uf)
+	if err != nil {
+		return nil, err
+	}
+
+	return uf, nil
 }

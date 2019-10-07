@@ -83,6 +83,10 @@ backendRq = function(rq) {
 		headers = {
 			Authorization: menuCtl.sess.user.token,
 		}
+
+		if (menuCtl.sess.mapid) {
+			headers["X-MapId"] = menuCtl.sess.mapid
+		}
 	}
 
 	let url = config.backend + rq.url
@@ -919,11 +923,8 @@ function login() {
 				user: resp.data
 			}
 
-			if (config.viewmap == "") {
-				menuCtl.share = "/map?viewmap=" + menuCtl.sess.user.id
-			}
-			loadGeos()
 			propsCtl.visits = true
+			loadMaps()
 		}).
 		catch((err) => {
 			console.log("anonymous mode")
@@ -935,6 +936,24 @@ function login() {
 				loadGeos()
 			}
 		})
+}
+
+function loadMaps() {
+	backendRq({
+			url: '/maps',
+			method: 'GET',
+			success: (data) => {
+				menuCtl.sess.mapid = data.maps[0].id
+				console.log("select map: ", menuCtl.sess.mapid)
+				if (config.viewmap == "") {
+					menuCtl.share = "/map?viewmap=" + menuCtl.sess.mapid
+				}
+				loadGeos()
+			},
+			error: (err) => {
+				statusCtl.err("Cannot load maps: " + err.message)
+			},
+	})
 }
 
 function loadGeos() {

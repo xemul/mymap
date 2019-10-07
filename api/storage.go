@@ -10,8 +10,10 @@ type Geos interface {
 	RemoveVisit(int, int) (bool, error)
 }
 
-func geos(c *Claims) (Geos, error) {
-	return &LocalJsonGeos{
-		name: c.UserId,
-	}, nil
+func openMap(uid string, mapid int) (Geos, error) {
+	return OpenLocalMap(uid, mapid)
+}
+
+func listMaps(uid string) ([]*Map, error) {
+	return ListLocalMaps(uid)
 }
