@@ -164,7 +164,6 @@ var menuCtl = new Vue({
 		sess: null,
 		viewmap: null,
 		share: "",
-		expimp: false,
 	},
 	methods: {
 		showAreas: () => { hidebar.show("areas") },
@@ -681,6 +680,7 @@ var propsCtl = new Vue({
 		nvDate: "",
 		nvTags: "",
 		nvRate: 0,
+		visits: false,
 	},
 	methods: {
 		closeProps: () => {
@@ -833,7 +833,7 @@ function login() {
 				menuCtl.share = "/map?viewmap=" + menuCtl.sess.user.id
 			}
 			loadGeos()
-			menuCtl.expimp = true
+			propsCtl.visits = true
 		}).
 		catch((err) => {
 			console.log("anonymous mode")
@@ -843,7 +843,6 @@ function login() {
 
 			if (config.viewmap) {
 				loadGeos()
-				menuCtl.expimp = true
 			}
 		})
 }
