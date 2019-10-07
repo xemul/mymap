@@ -48,7 +48,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -59,22 +59,23 @@
      transform="translate(39.583381,-113.79171)">
     <g
        id="g1027"
-       transform="matrix(0.54971232,0,0,0.54971232,-49.98636,111.75523)">
+       transform="matrix(0.54971232,0,0,0.54971232,-49.98636,111.75523)"
+       style="fill:#d4aa00">
       <circle
          r="0.70870537"
          cy="4.5952435"
          cx="20.461351"
          id="path834-62"
-         style="opacity:1;fill:#ffcc00;fill-opacity:1;stroke:none;stroke-width:0.48106059;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none" />
+         style="opacity:1;fill:#d4aa00;fill-opacity:1;stroke:none;stroke-width:0.48106059;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none" />
       <circle
          r="0.70870537"
          cy="4.5952435"
          cx="22.634714"
          id="path834-6-9"
-         style="opacity:1;fill:#ffcc00;fill-opacity:1;stroke:none;stroke-width:0.48106059;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none" />
+         style="opacity:1;fill:#d4aa00;fill-opacity:1;stroke:none;stroke-width:0.48106059;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none" />
     </g>
     <path
-       style="fill:none;stroke:#ffcc00;stroke-width:0.2908895;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:none;stroke:#d4aa00;stroke-width:0.2908895;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m -39.335865,115.60198 h 2.389449"
        id="path922"
        inkscape:connector-curvature="0" />
