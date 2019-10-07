@@ -172,6 +172,10 @@ var menuCtl = new Vue({
 			hidebar.show("timeline")
 			timelineCtl.load()
 		},
+		showRating: () => {
+			// hidebar.show("rating")
+			// ratingCtl.load()
+		},
 
 		saveAreas: () => {},
 		loadAreas: () => {},

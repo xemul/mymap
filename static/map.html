@@ -156,8 +156,11 @@
 			<a href="#" v-on:click="showAreas($event)">
 				<img src="static/img/areas.svg" title="Areas" height=20px></a>
 			<span v-if="sess.user != null">
+				<br>
 				<a href="#" v-on:click="showTimeline($event)">
 					<img src="static/img/timeline.svg" title="Timeline" height=20px></a>
+				<a href="#" v-on:click="showRating($event)">
+					<img src="static/img/rating.svg" title="Rating" height=20px></a>
 				<span v-if="share != ''">
 					<a href="#" v-bind:href="share">
 						<img src="static/img/share.svg" title="Link to this map" height=20px></a>
