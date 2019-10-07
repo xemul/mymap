@@ -146,16 +146,24 @@
 				<span v-if="sess.user == null">
 					<a href="/login"><img src="static/img/login.svg"></a></span>
 				<span v-if="sess.user != null">{{sess.user.name}}
-					<a href="/logout"><img src="static/img/logout.svg"></a></span>
+					<a href="/logout"><img src="static/img/logout.svg" height=20px></a></span>
 			</span>
 		</div>
 
 		<div id="other">
-			<a href="#" v-on:click="showTimeline($event)"><img src="static/img/timeline.svg" title="Timeline"></a>
-			<a href="#" v-on:click="showPoints($event)"><img src="static/img/points.svg" title="Points"></a>
-			<a href="#" v-on:click="showAreas($event)"><img src="static/img/areas.svg" title="Areas"></a>
+			<a href="#" v-on:click="showTimeline($event)">
+				<img src="static/img/timeline.svg" title="Timeline" height=20px></a>
+			<a href="#" v-on:click="showPoints($event)">
+				<img src="static/img/points.svg" title="Points" height=20px></a>
+			<a href="#" v-on:click="showAreas($event)">
+				<img src="static/img/areas.svg" title="Areas" height=20px></a>
 			<span v-if="share != ''">
-				<a href="#" v-bind:href="share"><img src="static/img/share.svg" title="Link to this map"></a>
+				<a href="#" v-bind:href="share">
+					<img src="static/img/share.svg" title="Link to this map" height=20px></a>
+			</span>
+			<span v-if="expimp">
+			<a href="#" v-on:click="saveAreas($event)"><img src="static/img/save.svg" title="Save" height=20px></a>
+			<a href="#" v-on:click="loadAreas($event)"><img src="static/img/load.svg" title="Load" height=20px></a>
 			</span>
 		</div>
 	</div>
