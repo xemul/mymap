@@ -241,6 +241,11 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
+	if c.UserId == "" {
+		http.Error(w, "not authorized", http.StatusUnauthorized)
+		return
+	}
+
 	switch r.Method {
 	case "GET":
 		handleListMaps(c, w, r)

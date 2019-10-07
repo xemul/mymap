@@ -191,6 +191,16 @@ var mapsCtl = new Vue({
 				},
 			})
 		},
+
+		switchMap: (ev, map) => {
+			console.log("switch to map", map.id)
+			clearMap()
+			mapsCtl.current = map.id
+			if (config.viewmap == "") {
+				mapsCtl.share = "/map?viewmap=" + mapsCtl.current
+			}
+			loadGeos()
+		},
 	},
 })
 
@@ -504,6 +514,12 @@ var areasCtl = new Vue({
 		},
 	},
 	methods: {
+		clearAll: () => {
+			areasCtl.loaded = {}
+			areasCtl.nr = 0
+			areasLayer.lr.clearLayers()
+		},
+
 		preferCountry: (ev, c) => {
 		       areasCtl.pc = c
 		},
@@ -608,6 +624,12 @@ var pointsCtl = new Vue({
 		},
 	},
 	methods: {
+		clearAll: () => {
+			pointsCtl.loaded = {}
+			pointsCtl.nr = 0
+			pointsLayer.lr.clearLayers()
+		},
+
 		addPoint: (pt) => {
 			pointsCtl.$set(pointsCtl.loaded, pt.id, pt)
 			pointsCtl.nr += 1
@@ -949,25 +971,22 @@ axios.get('/config')
 	.catch((err) => { statusCtl.warn("failed to load config") })
 
 function login() {
+	if (config.viewmap) {
+		menuCtl.sess = { user: null }
+		loadGeos()
+		return
+	}
+
 	axios.get('/creds').
 		then((resp) => {
 			console.log("authorized as ", resp.data.id)
-			menuCtl.sess = {
-				user: resp.data
-			}
-
+			menuCtl.sess = { user: resp.data }
 			propsCtl.visits = true
 			loadMaps()
 		}).
 		catch((err) => {
 			console.log("anonymous mode")
-			menuCtl.sess = {
-				user: null
-			}
-
-			if (config.viewmap) {
-				loadGeos()
-			}
+			menuCtl.sess = { user: null }
 		})
 }
 
@@ -990,11 +1009,17 @@ function loadMaps() {
 	})
 }
 
+function clearMap() {
+	areasCtl.clearAll()
+	pointsCtl.clearAll()
+}
+
 function loadGeos() {
 	backendRq({
 			url: '/geos',
 			method: 'GET',
 			success: (data) => {
+				console.log("loaded geos ", data.areas, data.points)
 				if (data.areas) {
 					data.areas.forEach((item, i) => {
 						item.state = "loading"

@@ -180,7 +180,10 @@
 				<span v-if="m.id == current"><img src="static/img/cursor.svg"></span>
 			</td>
 			<td>
-				<span v-if="m.name">{{m.name}}</span>
+				<a href="#" v-on:click="switchMap($event, m)">
+					<span v-if="m.name">{{m.name}}</span>
+					<span v-if="!m.name">map.{{m.id}}</span>
+				</a>
 				<small>({{m.id}})</small>
 			</td>
 		</tr>

@@ -10,6 +10,10 @@ import (
 	"encoding/json"
 )
 
+const (
+	defaultMapName = "default"
+)
+
 type LocalJsonGeos struct {
 	id	int
 	fname	string
@@ -293,16 +297,24 @@ func ListLocalMaps(uid string) ([]*Map, error) {
 		}
 	}
 
-	var ret []*Map
+	ret := []*Map{ &Map{} }
 
 	for _, m := range uf.Maps {
-		ret = append(ret, m)
+		if (m.Name == defaultMapName) {
+			*(ret[0]) = *m
+		} else {
+			ret = append(ret, m)
+		}
 	}
 
 	return ret, nil
 }
 
 func CreateLocalMap(uid string, m *Map) error {
+	if m.Name == defaultMapName {
+		return errors.New("Name taken")
+	}
+
 	log.Printf("New map @%s\n", uid)
 	uf, err := loadUserFile(uid)
 	if err != nil {
@@ -353,7 +365,7 @@ func makeUserFile(uid string) (*UserFile, error) {
 	uf := &UserFile{ Maps: map[int]*Map {
 			geos.id: &Map{
 				Id: geos.id,
-				Name: "default",
+				Name: defaultMapName,
 			},
 		},
 	}
