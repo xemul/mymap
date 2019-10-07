@@ -116,7 +116,12 @@ Vue.component('flagimg', {
 	props: ['country'],
 	template:
 		`<span>
+		<span v-if="country != ''">
 		<img v-bind:src="'static/img/flags/' + country + '.svg'" class="flag" v-bind:alt='country' v-bind:title='country'>
+		</span>
+		<span v-if="country == ''">
+		<img src="static/img/world.svg" title="click on a flag">
+		</span>
 		</span>`,
 })
 
@@ -437,8 +442,7 @@ var areasCtl = new Vue({
 				let found = true
 
 				if (areasCtl.pc != "") {
-					found = false
-					area.countries.forEach((c) => { if (c == areasCtl.pc) { found = true } })
+					found = hasCountry(area.countries, areasCtl.pc)
 				}
 
 				if (found) {
@@ -599,9 +603,30 @@ var timelineCtl = new Vue({
 		state:		"",
 		visited:	[],
 		show:		hidebar,
+		sc:		"",
+	},
+	computed: {
+		visitedS: () => {
+			if (timelineCtl.sc == "") {
+				return timelineCtl.visited
+			}
+
+			let vf = []
+			timelineCtl.visited.forEach((v, i) => {
+				if (hasCountry(v.pt.countries, timelineCtl.sc)) {
+					vf.push(v)
+				}
+			})
+
+			return vf
+		},
 	},
 
 	methods: {
+		selectCountry: (ev, c) => {
+		       timelineCtl.sc = c
+		},
+
 		sortVisited: () => {
 			timelineCtl.visited.sort((a,b) => {
 				return dateScore(b.date) - dateScore(a.date)
@@ -769,6 +794,12 @@ function strCmp(a, b) {
 	} else {
 		return 0
 	}
+}
+
+function hasCountry(cl, c) {
+	let found = false
+	cl.forEach((x) => { if (c == x) { found = true } })
+	return found
 }
 
 //

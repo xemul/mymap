@@ -32,15 +32,22 @@
 		<div v-if="state != 'ready'">
 			<small>{{state}}...</small>
 		</div>
+			<a href="#" v-on:click="selectCountry($event, '')">
+				<flagimg v-bind:country=sc></flagimg>
+			</a>
 		<table id="visitable">
-		<tr v-for="(vis, idx) in visited">
-			<td align="right">{{vis.date}}</td>
+		<tr v-for="(vis, idx) in visitedS">
+			<td align="right"><small>{{vis.date}}</small></td>
 			<td><rateimg v-bind:rt=vis.rating></rateimg></td>
 			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="static/img/locate.svg"></a></td>
+			<td>{{vis.pt.name}}</td>
 			<td>
-			<flaglist v-bind:list=vis.pt.countries></flaglist>
+				<template v-for="c in vis.pt.countries">
+					<a href="#" v-on:click="selectCountry($event, c)">
+					<flagimg v-bind:country=c></flagimg>
+					</a>
+				</template>
 			</td>
-			<td width="100%">{{vis.pt.name}}</td>
 			<td>{{vis.tags.join(" ")}}</td>
 		</tr>
 		</table>
@@ -93,7 +100,7 @@
 				<img v-if="sorted.i == 1" src="static/img/sort.svg">
 				<img v-if="sorted.i == 2" src="static/img/sort-r.svg">
 			</a>
-			<a href="#" v-if="pc != ''" v-on:click="preferCountry($event, '')">
+			<a href="#" v-on:click="preferCountry($event, '')">
 				<flagimg v-bind:country=pc></flagimg>
 			</a>
 		<ul>
