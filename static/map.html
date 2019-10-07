@@ -186,6 +186,16 @@
 				</a>
 				<small>({{m.id}})</small>
 			</td>
+			<td>
+				<span v-if="m.id == current || m.name == 'default'">
+				&nbsp;
+				</span>
+				<span v-if="m.id != current && m.name != 'default'">
+				<a href="#" v-on:click="removeMap($event, m)">
+				<img src="static/img/remove.svg">
+				</a>
+				</span>
+			</td>
 		</tr>
 		<tr>
 			<td></td>

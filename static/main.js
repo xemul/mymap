@@ -192,6 +192,9 @@ var mapsCtl = new Vue({
 			})
 		},
 
+		removeMap: (ev, map) => {
+		},
+
 		switchMap: (ev, map) => {
 			console.log("switch to map", map.id)
 			clearMap()
