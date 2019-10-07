@@ -19,7 +19,7 @@ type Claims struct {
 }
 
 func handleListGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
-	load, err := storage(c).LoadGeos()
+	load, err := geos(c).LoadGeos()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -30,7 +30,7 @@ func handleListGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSaveGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
-	var sv SavePointReq
+	var sv SaveGeoReq
 
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&sv)
@@ -39,7 +39,7 @@ func handleSaveGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = storage(c).SavePoint(&sv)
+	err = geos(c).SavePoint(&sv)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -61,7 +61,7 @@ func handleForgetGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := storage(c).RemoveGeo(areaId, typ[0])
+	ok, err := geos(c).RemoveGeo(areaId, typ[0])
 	if err != nil {
 		if ok {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -86,7 +86,7 @@ func handleGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleListVisits(c *Claims, w http.ResponseWriter, r *http.Request, id int) {
-	viss, err := storage(c).LoadVisits(id)
+	viss, err := geos(c).LoadVisits(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -106,7 +106,7 @@ func handleSaveVisit(c *Claims, w http.ResponseWriter, r *http.Request, id int) 
 		return
 	}
 
-	err = storage(c).SaveVisit(id, &sv)
+	err = geos(c).SaveVisit(id, &sv)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -124,7 +124,7 @@ func handleDeleteVisit(c *Claims, w http.ResponseWriter, r *http.Request, id int
 
 	log.Printf("[-v] %d:%d\n", id, vn)
 
-	ok, err := storage(c).RemoveVisit(id, vn)
+	ok, err := geos(c).RemoveVisit(id, vn)
 	if err != nil {
 		if ok {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

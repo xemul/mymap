@@ -1,7 +1,7 @@
 package main
 
-type Storage interface {
-	SavePoint(*SavePointReq) error
+type Geos interface {
+	SavePoint(*SaveGeoReq) error
 	LoadGeos() (*LoadGeosResp, error)
 	RemoveGeo(int, string) (bool, error)
 
@@ -10,8 +10,8 @@ type Storage interface {
 	RemoveVisit(int, int) (bool, error)
 }
 
-func storage(c *Claims) Storage {
-	return &LocalJsonStorage{
+func geos(c *Claims) Geos {
+	return &LocalJsonGeos{
 		name: c.UserId,
 	}
 }

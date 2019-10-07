@@ -1,5 +1,9 @@
 package main
 
+/*
+ * Fundamental types
+ */
+
 type Area struct {
 	Id		int			`json:"id"`
 	Name		string			`json:"name"`
@@ -23,7 +27,11 @@ type Visit struct {
 	PId		*int			`json:"point,omitempty"`
 }
 
-type SavePointReq struct {
+/*
+ * API
+ */
+
+type SaveGeoReq struct {
 	Point		*Point			`json:"point,omitempty"`
 	Areas		[]*Area			`json:"areas"`
 }
@@ -41,7 +49,11 @@ type LoadVisitsResp struct {
 	A		[]*Visit		`json:"array"`
 }
 
-type LocalJsonFile struct {
+/*
+ * "DB"
+ */
+
+type GeosFile struct {
 	Points		map[int]*PointFile	`json:"points"`
 	Areas		map[int]*AreaFile	`json:"areas"`
 }

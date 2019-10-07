@@ -7,16 +7,16 @@ import (
 	"encoding/json"
 )
 
-type LocalJsonStorage struct {
+type LocalJsonGeos struct {
 	name	string
 	lock	sync.RWMutex
 }
 
-func (s *LocalJsonStorage)filename() string {
+func (s *LocalJsonGeos)filename() string {
 	return s.name + ".data.json"
 }
 
-func (s *LocalJsonStorage)SavePoint(sv *SavePointReq) error {
+func (s *LocalJsonGeos)SavePoint(sv *SaveGeoReq) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -55,7 +55,7 @@ func (s *LocalJsonStorage)SavePoint(sv *SavePointReq) error {
 	return s.saveToFile(f)
 }
 
-func (s *LocalJsonStorage)LoadGeos() (*LoadGeosResp, error) {
+func (s *LocalJsonGeos)LoadGeos() (*LoadGeosResp, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -76,7 +76,7 @@ func (s *LocalJsonStorage)LoadGeos() (*LoadGeosResp, error) {
 	return &ret, nil
 }
 
-func (s *LocalJsonStorage)RemoveGeo(id int, typ string) (bool, error) {
+func (s *LocalJsonGeos)RemoveGeo(id int, typ string) (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -107,7 +107,7 @@ func (s *LocalJsonStorage)RemoveGeo(id int, typ string) (bool, error) {
 	return true, s.saveToFile(f)
 }
 
-func (s *LocalJsonStorage)SaveVisit(pid int, sv *SaveVisitReq) error {
+func (s *LocalJsonGeos)SaveVisit(pid int, sv *SaveVisitReq) error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -125,7 +125,7 @@ func (s *LocalJsonStorage)SaveVisit(pid int, sv *SaveVisitReq) error {
 	return s.saveToFile(f)
 }
 
-func (s *LocalJsonStorage)LoadVisits(pid int) (*LoadVisitsResp, error) {
+func (s *LocalJsonGeos)LoadVisits(pid int) (*LoadVisitsResp, error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -162,7 +162,7 @@ func (s *LocalJsonStorage)LoadVisits(pid int) (*LoadVisitsResp, error) {
 	return ret, nil
 }
 
-func (s *LocalJsonStorage)RemoveVisit(pid, vn int) (bool, error) {
+func (s *LocalJsonGeos)RemoveVisit(pid, vn int) (bool, error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -185,11 +185,11 @@ func (s *LocalJsonStorage)RemoveVisit(pid, vn int) (bool, error) {
 	return true, s.saveToFile(f)
 }
 
-func (s *LocalJsonStorage)loadFromFile() (*LocalJsonFile, error) {
+func (s *LocalJsonGeos)loadFromFile() (*GeosFile, error) {
 	f, err := os.Open(s.filename())
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &LocalJsonFile{ }, nil
+			return &GeosFile{ }, nil
 		}
 
 		return nil, err
@@ -197,7 +197,7 @@ func (s *LocalJsonStorage)loadFromFile() (*LocalJsonFile, error) {
 
 	defer f.Close()
 
-	var ret LocalJsonFile
+	var ret GeosFile
 
 	err = json.NewDecoder(f).Decode(&ret)
 	if err != nil {
@@ -207,7 +207,7 @@ func (s *LocalJsonStorage)loadFromFile() (*LocalJsonFile, error) {
 	return &ret, nil
 }
 
-func (s *LocalJsonStorage)saveToFile(fc *LocalJsonFile) error {
+func (s *LocalJsonGeos)saveToFile(fc *GeosFile) error {
 	f, err := os.OpenFile("." + s.filename(), os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
 	if err != nil {
 		return err
