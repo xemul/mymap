@@ -183,12 +183,12 @@
 				<img src="static/img/points.svg" title="Points" height=20px></a>
 			<a href="#" v-on:click="showAreas($event)">
 				<img src="static/img/areas.svg" title="Areas" height=20px></a>
+			<a href="#" v-on:click="showTimeline($event)">
+				<img src="static/img/timeline.svg" title="Timeline" height=20px></a>
+			<a href="#" v-on:click="showRating($event)">
+				<img src="static/img/rating.svg" title="Rating" height=20px></a>
 			<span v-if="sess != null && sess.user != null">
 				<br>
-				<a href="#" v-on:click="showTimeline($event)">
-					<img src="static/img/timeline.svg" title="Timeline" height=20px></a>
-				<a href="#" v-on:click="showRating($event)">
-					<img src="static/img/rating.svg" title="Rating" height=20px></a>
 				<span v-if="share != ''">
 					<a href="#" v-bind:href="share">
 						<img src="static/img/share.svg" title="Link to this map" height=20px></a>
@@ -220,16 +220,7 @@
 		<tr><td>Inside</td><td>{{point.area}}:{{point.countries.join(",")}}</td></tr>
 		</table>
 
-		<span v-if="visits">
 		<br><img src="static/img/visit.svg"><br>
-		<input v-model="nvDate" placeholder="dd/mm/yyyy">
-		<input v-model="nvTags" placeholder="tag, ..."><br>
-		<input v-model="nvRate" type="radio" value=-2><img src="static/img/awful.svg">
-		<input v-model="nvRate" type="radio" value=-1><img src="static/img/bad.svg">
-		<input v-model="nvRate" type="radio" value=0><img src="static/img/neutral.svg">
-		<input v-model="nvRate" type="radio" value=1><img src="static/img/good.svg">
-		<input v-model="nvRate" type="radio" value=2><img src="static/img/excellent.svg">
-		<a href="#" v-on:click="addVisit($event)"><img src="static/img/add.svg"></a>
 
 		<table id="visitable">
 		<tr v-for="(vis, idx) in visited">
@@ -240,7 +231,18 @@
 			<td><small>{{idx}}:{{vis.idx}}</small></td>
 		</tr>
 		</table>
+
+		<span v-if="visits">
+		<input v-model="nvDate" placeholder="dd/mm/yyyy">
+		<input v-model="nvTags" placeholder="tag, ..."><br>
+		<input v-model="nvRate" type="radio" value=-2><img src="static/img/awful.svg">
+		<input v-model="nvRate" type="radio" value=-1><img src="static/img/bad.svg">
+		<input v-model="nvRate" type="radio" value=0><img src="static/img/neutral.svg">
+		<input v-model="nvRate" type="radio" value=1><img src="static/img/good.svg">
+		<input v-model="nvRate" type="radio" value=2><img src="static/img/excellent.svg">
+		<a href="#" v-on:click="addVisit($event)"><img src="static/img/add.svg"></a>
 		</span>
+
 	</div>
 	<div id="marker" v-if="latlng != null">
 		<hr>
