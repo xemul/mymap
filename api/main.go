@@ -18,8 +18,24 @@ type Claims struct {
 	UserId	string		`json:"id"`
 }
 
-func handleListGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
-	load, err := geos(c).LoadGeos()
+func getMap(c *Claims, w http.ResponseWriter, r *http.Request) Geos {
+	mp, err := geos(c)
+
+	if mp == nil {
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		} else {
+			http.Error(w, "no such map", http.StatusNotFound)
+		}
+
+		return nil
+	}
+
+	return mp
+}
+
+func handleListGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
+	load, err := mp.LoadGeos()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -29,7 +45,7 @@ func handleListGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(load)
 }
 
-func handleSaveGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
+func handleSaveGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
 	var sv SaveGeoReq
 
 	defer r.Body.Close()
@@ -39,7 +55,7 @@ func handleSaveGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = geos(c).SavePoint(&sv)
+	err = mp.SavePoint(&sv)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -48,7 +64,7 @@ func handleSaveGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleForgetGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
+func handleForgetGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
 	areaId, err := strconv.Atoi(r.URL.Query()["id"][0])
 	if err != nil {
 		http.Error(w, "id must be integer", http.StatusBadRequest)
@@ -61,7 +77,7 @@ func handleForgetGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := geos(c).RemoveGeo(areaId, typ[0])
+	ok, err := mp.RemoveGeo(areaId, typ[0])
 	if err != nil {
 		if ok {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -75,18 +91,23 @@ func handleForgetGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
+	mp := getMap(c, w, r)
+	if mp == nil {
+		return
+	}
+
 	switch r.Method {
 	case "GET":
-		handleListGeos(c, w, r)
+		handleListGeos(mp, w, r)
 	case "POST":
-		handleSaveGeos(c, w, r)
+		handleSaveGeos(mp, w, r)
 	case "DELETE":
-		handleForgetGeos(c, w, r)
+		handleForgetGeos(mp, w, r)
 	}
 }
 
-func handleListVisits(c *Claims, w http.ResponseWriter, r *http.Request, id int) {
-	viss, err := geos(c).LoadVisits(id)
+func handleListVisits(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
+	viss, err := mp.LoadVisits(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -96,7 +117,7 @@ func handleListVisits(c *Claims, w http.ResponseWriter, r *http.Request, id int)
 	json.NewEncoder(w).Encode(viss)
 }
 
-func handleSaveVisit(c *Claims, w http.ResponseWriter, r *http.Request, id int) {
+func handleSaveVisit(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
 	var sv SaveVisitReq
 
 	defer r.Body.Close()
@@ -106,7 +127,7 @@ func handleSaveVisit(c *Claims, w http.ResponseWriter, r *http.Request, id int) 
 		return
 	}
 
-	err = geos(c).SaveVisit(id, &sv)
+	err = mp.SaveVisit(id, &sv)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -115,7 +136,7 @@ func handleSaveVisit(c *Claims, w http.ResponseWriter, r *http.Request, id int) 
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleDeleteVisit(c *Claims, w http.ResponseWriter, r *http.Request, id int) {
+func handleDeleteVisit(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
 	vn, err := strconv.Atoi(r.URL.Query()["vn"][0])
 	if err != nil {
 		http.Error(w, "vn must be integer", http.StatusBadRequest)
@@ -124,7 +145,7 @@ func handleDeleteVisit(c *Claims, w http.ResponseWriter, r *http.Request, id int
 
 	log.Printf("[-v] %d:%d\n", id, vn)
 
-	ok, err := geos(c).RemoveVisit(id, vn)
+	ok, err := mp.RemoveVisit(id, vn)
 	if err != nil {
 		if ok {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -138,6 +159,11 @@ func handleDeleteVisit(c *Claims, w http.ResponseWriter, r *http.Request, id int
 }
 
 func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
+	mp := getMap(c, w, r)
+	if mp == nil {
+		return
+	}
+
 	id := r.URL.Query()["id"]
 	ptid := -1
 
@@ -159,11 +185,11 @@ func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		handleListVisits(c, w, r, ptid)
+		handleListVisits(mp, w, r, ptid)
 	case "POST":
-		handleSaveVisit(c, w, r, ptid)
+		handleSaveVisit(mp, w, r, ptid)
 	case "DELETE":
-		handleDeleteVisit(c, w, r, ptid)
+		handleDeleteVisit(mp, w, r, ptid)
 	}
 }
 

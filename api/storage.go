@@ -10,8 +10,8 @@ type Geos interface {
 	RemoveVisit(int, int) (bool, error)
 }
 
-func geos(c *Claims) Geos {
+func geos(c *Claims) (Geos, error) {
 	return &LocalJsonGeos{
 		name: c.UserId,
-	}
+	}, nil
 }
