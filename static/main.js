@@ -84,8 +84,8 @@ backendRq = function(rq) {
 			Authorization: menuCtl.sess.user.token,
 		}
 
-		if (menuCtl.sess.mapid) {
-			headers["X-MapId"] = menuCtl.sess.mapid
+		if (mapsCtl.current) {
+			headers["X-MapId"] = mapsCtl.current
 		}
 	}
 
@@ -159,6 +159,42 @@ hidebar.close = () => {
 }
 
 //
+// Maps
+//
+
+var mapsCtl = new Vue({
+	el: '#maps',
+	data: {
+		show: hidebar,
+		maps: [],
+		current: "",
+		share: "",
+		nMap: "",
+	},
+	methods: {
+		closeMaps: () => { hidebar.close() },
+
+		saveAreas: () => {},
+		loadAreas: () => {},
+
+		addMap: () => {
+			backendRq({
+				url: '/maps',
+				method: 'post',
+				data: JSON.stringify({name: mapsCtl.nMap}),
+				success: (data) => {
+					mapsCtl.nMap = ""
+					mapsCtl.maps.push(data)
+				},
+				error: (err) => {
+					statusCtl.err("Cannot create map: " + err.message)
+				},
+			})
+		},
+	},
+})
+
+//
 // Sidebar stuff
 //
 
@@ -167,11 +203,11 @@ var menuCtl = new Vue({
 	data: {
 		sess: null,
 		viewmap: null,
-		share: "",
 	},
 	methods: {
 		showAreas: () => { hidebar.show("areas") },
 		showPoints: () => { hidebar.show("points") },
+		showMaps: () => { hidebar.show("maps") },
 		showTimeline: () => {
 			hidebar.show("timeline")
 			timelineCtl.load()
@@ -180,9 +216,6 @@ var menuCtl = new Vue({
 			hidebar.show("ratings")
 			ratingCtl.load()
 		},
-
-		saveAreas: () => {},
-		loadAreas: () => {},
 	},
 })
 
@@ -943,10 +976,11 @@ function loadMaps() {
 			url: '/maps',
 			method: 'GET',
 			success: (data) => {
-				menuCtl.sess.mapid = data.maps[0].id
-				console.log("select map: ", menuCtl.sess.mapid)
+				mapsCtl.maps = data.maps
+				mapsCtl.current = data.maps[0].id
+				console.log("select map: ", mapsCtl.current)
 				if (config.viewmap == "") {
-					menuCtl.share = "/map?viewmap=" + menuCtl.sess.mapid
+					mapsCtl.share = "/map?viewmap=" + mapsCtl.current
 				}
 				loadGeos()
 			},

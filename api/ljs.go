@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"log"
 	"sync"
 	"errors"
 	"strconv"
@@ -235,9 +236,10 @@ func makeEmptyGeos() (*LocalJsonGeos, error) {
 		mapid := rand.Intn(1000000)
 		s := localGeos(mapid)
 
+		log.Printf("`- try geos %d\n", mapid)
 		f, err := os.OpenFile(s.fname, os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0600)
 		if err != nil {
-			if err == os.ErrExist {
+			if os.IsExist(err) {
 				continue
 			}
 
@@ -300,6 +302,31 @@ func ListLocalMaps(uid string) ([]*Map, error) {
 	return ret, nil
 }
 
+func CreateLocalMap(uid string, m *Map) error {
+	log.Printf("New map @%s\n", uid)
+	uf, err := loadUserFile(uid)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("`- make geos @%s\n", uid)
+	geos, err := makeEmptyGeos()
+	if err != nil {
+		return err
+	}
+
+	m.Id = geos.id
+	uf.Maps[geos.id] = m
+
+	log.Printf("`- write to file @%s [%d]\n", uid, geos.id)
+	err = writeUserFile(uid, uf)
+	if err != nil {
+		geos.Remove()
+	}
+
+	return err
+}
+
 func loadUserFile(uid string) (*UserFile, error) {
 	f, err := os.Open(uid + ".json")
 	if err != nil {
@@ -323,17 +350,27 @@ func makeUserFile(uid string) (*UserFile, error) {
 		return nil, err
 	}
 
-	defer func() {
-		if err != nil {
-			geos.Remove()
-		}
-	}()
+	uf := &UserFile{ Maps: map[int]*Map {
+			geos.id: &Map{
+				Id: geos.id,
+				Name: "default",
+			},
+		},
+	}
 
-	var f *os.File
-
-	f, err = os.OpenFile(uid + ".json", os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
+	err = writeUserFile(uid, uf)
 	if err != nil {
-		return nil, err
+		geos.Remove()
+	}
+
+	return uf, err
+}
+
+
+func writeUserFile(uid string, uf *UserFile) error {
+	f, err := os.OpenFile("." + uid, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
+	if err != nil {
+		return err
 	}
 
 	defer func() {
@@ -343,15 +380,12 @@ func makeUserFile(uid string) (*UserFile, error) {
 		}
 	}()
 
-	uf := &UserFile{ Maps: map[int]*Map {
-			geos.id: &Map{ Id: geos.id },
-		},
-	}
-
-	err = json.NewEncoder(f).Encode(&uf)
+	err = json.NewEncoder(f).Encode(uf)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return uf, nil
+	err = os.Rename(f.Name(), uid + ".json")
+
+	return err
 }

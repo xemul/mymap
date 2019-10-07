@@ -17,3 +17,7 @@ func openMap(uid string, mapid int) (Geos, error) {
 func listMaps(uid string) ([]*Map, error) {
 	return ListLocalMaps(uid)
 }
+
+func createMap(uid string, m *Map) error {
+	return CreateLocalMap(uid, m)
+}

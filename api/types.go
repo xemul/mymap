@@ -6,6 +6,7 @@ package main
 
 type Map struct {
 	Id		int			`json:"id"`
+	Name		string			`json:"name"`
 }
 
 type Area struct {

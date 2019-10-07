@@ -159,6 +159,39 @@
 			</table>
 		</ul>
 	</div>
+	<div id="maps" v-if="show.n == 'maps'">
+		<hr>
+		<div class="right">
+			<a href="#" v-on:click="closeMaps($event)" align="right"><img src="static/img/close.svg"></a>
+		</div>
+		Maps<br>
+		Current:&nbsp;
+		<span v-if="share != ''">
+			<a href="#" v-bind:href="share">
+				<img src="static/img/share.svg" title="Link to this map" height=20px></a>
+			<a href="#" v-on:click="saveAreas($event)">
+				<img src="static/img/save.svg" title="Save" height=20px></a>
+			<a href="#" v-on:click="loadAreas($event)">
+				<img src="static/img/load.svg" title="Load" height=20px></a>
+		</span>
+		<table border=0>
+		<tr v-for="m in maps">
+			<td>
+				<span v-if="m.id == current"><img src="static/img/cursor.svg"></span>
+			</td>
+			<td>
+				<span v-if="m.name">{{m.name}}</span>
+				<small>({{m.id}})</small>
+			</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>
+			<input v-model="nMap" placeholder="map name">
+			<a href="#" v-on:click="addMap($event)"><img src="static/img/add.svg"></a>
+			</td>
+		</table>
+	</div>
 </div>
 </div>
 
@@ -183,21 +216,15 @@
 				<img src="static/img/points.svg" title="Points" height=20px></a>
 			<a href="#" v-on:click="showAreas($event)">
 				<img src="static/img/areas.svg" title="Areas" height=20px></a>
+
+			<span v-if="sess != null && sess.user != null">
+				<a href="#" v-on:click="showMaps($event)">
+					<img src="static/img/maps.svg" title="Maps" height=20px></a>
+			</span>
 			<a href="#" v-on:click="showTimeline($event)">
 				<img src="static/img/timeline.svg" title="Timeline" height=20px></a>
 			<a href="#" v-on:click="showRating($event)">
 				<img src="static/img/rating.svg" title="Rating" height=20px></a>
-			<span v-if="sess != null && sess.user != null">
-				<br>
-				<span v-if="share != ''">
-					<a href="#" v-bind:href="share">
-						<img src="static/img/share.svg" title="Link to this map" height=20px></a>
-				</span>
-				<a href="#" v-on:click="saveAreas($event)">
-					<img src="static/img/save.svg" title="Save" height=20px></a>
-				<a href="#" v-on:click="loadAreas($event)">
-					<img src="static/img/load.svg" title="Load" height=20px></a>
-			</span>
 		</div>
 	</div>
 	<div id="status" v-if="message != ''">
