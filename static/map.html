@@ -39,8 +39,8 @@
 		<tr v-for="(vis, idx) in visitedS">
 			<td align="right"><small>{{vis.date}}</small></td>
 			<td><rateimg v-bind:rt=vis.rating></rateimg></td>
-			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="static/img/locate.svg"></a></td>
-			<td>{{vis.pt.name}}</td>
+			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="static/img/locate.svg"></a>
+			{{vis.pt.name}}</td>
 			<td>
 				<template v-for="c in vis.pt.countries">
 					<a href="#" v-on:click="selectCountry($event, c)">
@@ -49,6 +49,34 @@
 				</template>
 			</td>
 			<td>{{vis.tags.join(" ")}}</td>
+		</tr>
+		</table>
+	</div>
+	<div id="ratings" v-if="show.n == 'ratings'">
+		<hr>
+		<div class="right">
+			<a href="#" v-on:click="closeRatings($event)" align="right"><img src="static/img/close.svg"></a>
+		</div>
+
+		Ratings
+		<div v-if="state != 'ready'">
+			<small>{{state}}...</small>
+		</div>
+			<a href="#" v-on:click="selectCountry($event, '')">
+				<flagimg v-bind:country=sc></flagimg>
+			</a>
+		<table id="visitable">
+		<tr v-for="(pt, idx) in pointsS">
+			<td><rateimg v-bind:rt=pt.irating></rateimg><small>{{pt.rating}}</small></td>
+			<td><a href="#" v-on:click="highlightPoint($event, pt.pt)"><img src="static/img/locate.svg"></a>
+			{{pt.pt.name}}</td>
+			<td>
+				<template v-for="c in pt.pt.countries">
+					<a href="#" v-on:click="selectCountry($event, c)">
+					<flagimg v-bind:country=c></flagimg>
+					</a>
+				</template>
+			</td>
 		</tr>
 		</table>
 	</div>
@@ -155,7 +183,7 @@
 				<img src="static/img/points.svg" title="Points" height=20px></a>
 			<a href="#" v-on:click="showAreas($event)">
 				<img src="static/img/areas.svg" title="Areas" height=20px></a>
-			<span v-if="sess.user != null">
+			<span v-if="sess != null && sess.user != null">
 				<br>
 				<a href="#" v-on:click="showTimeline($event)">
 					<img src="static/img/timeline.svg" title="Timeline" height=20px></a>

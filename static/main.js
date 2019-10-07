@@ -173,8 +173,8 @@ var menuCtl = new Vue({
 			timelineCtl.load()
 		},
 		showRating: () => {
-			// hidebar.show("rating")
-			// ratingCtl.load()
+			hidebar.show("ratings")
+			ratingCtl.load()
 		},
 
 		saveAreas: () => {},
@@ -597,6 +597,92 @@ var pointsCtl = new Vue({
 		},
 
 		closePoints: () => { hidebar.close() },
+	},
+})
+
+//
+// Ratings
+//
+
+var ratingCtl = new Vue({
+	el: '#ratings',
+	data: {
+		state:		"",
+		points:		[],
+		show:		hidebar,
+		sc:		"",
+	},
+	computed: {
+		pointsS: () => {
+			if (ratingCtl.sc == "") {
+				return ratingCtl.points
+			}
+
+			let vf = []
+			ratingCtl.points.forEach((v, i) => {
+				if (hasCountry(v.pt.countries, ratingCtl.sc)) {
+					vf.push(v)
+				}
+			})
+
+			return vf
+		},
+	},
+
+	methods: {
+		selectCountry: (ev, c) => {
+		       ratingCtl.sc = c
+		},
+
+		load: () => {
+			ratingCtl.state = "loading"
+			ratingCtl.points = []
+
+			backendRq({
+				url: '/visits',
+				method: 'GET',
+				success: (data) => {
+					ratingCtl.state = "ready"
+					if (data.array) {
+						let points = {}
+
+						data.array.forEach((v, i) => {
+							let pt = points[v.point]
+							if (pt == null) {
+								pt = {
+									pt: pointsCtl.loaded[v.point],
+									rating: v.rating,
+									nr: 1,
+								}
+
+								points[v.point] = pt
+							} else {
+								pt.rating += v.rating
+								pt.nr += 1
+							}
+						})
+
+						Object.keys(points).forEach((key, idx) => {
+							let pt = points[key]
+							pt.rating /= pt.nr
+							pt.irating = Math.round(pt.rating)
+							ratingCtl.points.push(pt)
+						})
+
+						ratingCtl.points.sort((a, b) => { return b.rating - a.rating })
+					}
+				},
+				error: (err) => {
+					statusCtl.err("Cannot load visits: " + err.message)
+				},
+			})
+		},
+
+		closeRatings: () => {
+			ratingCtl.state = ""
+			ratingCtl.points = []
+			hidebar.close()
+		},
 	},
 })
 
