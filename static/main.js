@@ -99,6 +99,19 @@ backendRq = function(rq) {
 	}).then((resp) => { rq.success(resp.data) }).catch((err) => { rq.error(err) })
 }
 
+Vue.component('rateimg', {
+	props: ['rt'],
+	template:
+		`<span>
+		<span v-if='rt == "-2"'><img src='static/img/awful.svg' title='awful'></span>
+		<span v-if='rt == "-1"'><img src='static/img/bad.svg' title='bad'></span>
+		<span v-if='rt == "0"'><img src='static/img/neutral.svg' title='neutral'></span>
+		<span v-if='rt == "1"'><img src='static/img/good.svg' title='good'></span>
+		<span v-if='rt == "2"'><img src='static/img/excellent.svg' title='excellent'></span>
+		</span>`,
+
+})
+
 Vue.component('flagimg', {
 	props: ['country'],
 	template:
@@ -643,6 +656,7 @@ var propsCtl = new Vue({
 		visited: [],
 		nvDate: "",
 		nvTags: "",
+		nvRate: 0,
 	},
 	methods: {
 		closeProps: () => {
@@ -654,6 +668,7 @@ var propsCtl = new Vue({
 		clearNv: () => {
 			propsCtl.nvDate = ""
 			propsCtl.nvTags = ""
+			propsCtl.nvRate = 0
 		},
 
 		showPoint: (pt) => {
@@ -707,6 +722,7 @@ var propsCtl = new Vue({
 			let nv = {
 				date: propsCtl.nvDate,
 				tags: propsCtl.nvTags.split(/\s*,\s*/),
+				rating: parseInt(propsCtl.nvRate),
 			}
 
 			backendRq({

@@ -35,6 +35,7 @@
 		<table id="visitable">
 		<tr v-for="(vis, idx) in visited">
 			<td align="right">{{vis.date}}</td>
+			<td><rateimg v-bind:rt=vis.rating></rateimg></td>
 			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="static/img/locate.svg"></a></td>
 			<td>
 			<flaglist v-bind:list=vis.pt.countries></flaglist>
@@ -153,12 +154,18 @@
 
 		<br><img src="static/img/visit.svg"><br>
 		<input v-model="nvDate" placeholder="dd/mm/yyyy">
-		<input v-model="nvTags" placeholder="tag, ...">
+		<input v-model="nvTags" placeholder="tag, ..."><br>
+		<input v-model="nvRate" type="radio" value=-2><img src="static/img/awful.svg">
+		<input v-model="nvRate" type="radio" value=-1><img src="static/img/bad.svg">
+		<input v-model="nvRate" type="radio" value=0><img src="static/img/neutral.svg">
+		<input v-model="nvRate" type="radio" value=1><img src="static/img/good.svg">
+		<input v-model="nvRate" type="radio" value=2><img src="static/img/excellent.svg">
 		<a href="#" v-on:click="addVisit($event)"><img src="static/img/add.svg"></a>
 
 		<table id="visitable">
 		<tr v-for="(vis, idx) in visited">
 			<td align="right">{{vis.date}}</td>
+			<td> <rateimg v-bind:rt='vis.rating'></rateimg> </td>
 			<td width="100%">{{vis.tags.join(" ")}}</td>
 			<td><a href="#" v-on:click="removeVisit($event, idx)"><img src="static/img/remove.svg"></a></td>
 			<td><small>{{idx}}:{{vis.idx}}</small></td>

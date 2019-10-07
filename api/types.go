@@ -19,6 +19,7 @@ type Point struct {
 type Visit struct {
 	Date		string			`json:"date"`
 	Tags		[]string		`json:"tags"`
+	Rating		int			`json:"rating"`
 	PId		*int			`json:"point,omitempty"`
 }
 
