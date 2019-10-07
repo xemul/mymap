@@ -433,25 +433,20 @@ var areasCtl = new Vue({
 		loadedS: () => {
 			let ret = []
 			Object.entries(areasCtl.loaded).forEach((a) => {
-				ret.push(a[1])
+				let area = a[1]
+				let found = true
+
+				if (areasCtl.pc != "") {
+					found = false
+					area.countries.forEach((c) => { if (c == areasCtl.pc) { found = true } })
+				}
+
+				if (found) {
+					ret.push(a[1])
+				}
 			})
 			if (areasCtl.sorted.i != 0) {
 				ret.sort((a, b) => {
-					if (areasCtl.pc != "") {
-						let ina = false
-						let inb = false
-
-						a.countries.forEach((c) => { if (c == areasCtl.pc) { ina = true }})
-						b.countries.forEach((c) => { if (c == areasCtl.pc) { inb = true }})
-
-						if (ina && !inb) {
-							return -1;
-						}
-						if (inb && !ina) {
-							return 1;
-						}
-					}
-
 					let o = strCmp(a.name, b.name)
 					if (areasCtl.sorted.i == 2) { o = -o }
 					return o
