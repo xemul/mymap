@@ -143,8 +143,10 @@
 			</span>
 			<span v-if="sess == null"><img src="static/img/more.svg"></span>
 			<span v-if="sess != null">
-				<span v-if="sess.user == null"><a href="/login">login</a></span>
-				<span v-if="sess.user != null">{{sess.user.name}}&nbsp;<a href="/logout">(logout)</a></span>
+				<span v-if="sess.user == null">
+					<a href="/login"><img src="static/img/login.svg"></a></span>
+				<span v-if="sess.user != null">{{sess.user.name}}
+					<a href="/logout"><img src="static/img/logout.svg"></a></span>
 			</span>
 		</div>
 
