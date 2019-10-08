@@ -210,6 +210,11 @@ func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
+	if c.UserId == "" {
+		http.Error(w, "not authorized", http.StatusUnauthorized)
+		return
+	}
+
 	maps, err := listMaps(c.UserId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -240,17 +245,30 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&m)
 }
 
-func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
-	if c.UserId == "" {
-		http.Error(w, "not authorized", http.StatusUnauthorized)
+func handleDeleteMap(c *Claims, w http.ResponseWriter, r *http.Request) {
+	mapid, err := qInt(r, "id")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	err = removeMap(c.UserId, mapid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		handleListMaps(c, w, r)
 	case "POST":
 		handleCreateMap(c, w, r)
+	case "DELETE":
+		handleDeleteMap(c, w, r)
 	}
 }
 
@@ -314,7 +332,7 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.Handle("/maps", auth(handleMaps)).Methods("GET", "POST", "OPTIONS")
+	r.Handle("/maps", auth(handleMaps)).Methods("GET", "POST", "DELETE", "OPTIONS")
 	r.Handle("/geos", auth(handleGeos)).Methods("GET", "POST", "DELETE", "OPTIONS")
 	r.Handle("/visits", auth(handleVisits)).Methods("GET", "POST", "DELETE", "OPTIONS")
 

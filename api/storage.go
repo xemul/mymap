@@ -21,3 +21,7 @@ func listMaps(uid string) ([]*Map, error) {
 func createMap(uid string, m *Map) error {
 	return CreateLocalMap(uid, m)
 }
+
+func removeMap(uid string, mapid int) error {
+	return RemoveLocalMap(uid, mapid)
+}

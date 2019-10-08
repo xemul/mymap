@@ -339,6 +339,29 @@ func CreateLocalMap(uid string, m *Map) error {
 	return err
 }
 
+func RemoveLocalMap(uid string, mapid int) error {
+	log.Printf("Remove map @%s.%d\n", uid, mapid)
+	uf, err := loadUserFile(uid)
+	if err != nil {
+		return err
+	}
+
+	_, ok := uf.Maps[mapid]
+	if !ok {
+		return errors.New("no such map")
+	}
+
+	delete(uf.Maps, mapid)
+	err = writeUserFile(uid, uf)
+	if err != nil {
+		return err
+	}
+
+	localGeos(mapid).Remove()
+
+	return nil
+}
+
 func loadUserFile(uid string) (*UserFile, error) {
 	f, err := os.Open(uid + ".json")
 	if err != nil {

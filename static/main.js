@@ -221,10 +221,33 @@ var mapsCtl = new Vue({
 	data: {
 		sidebar: sidebarSwitch,
 
-		maps: [],
+		maps: {},
 		current: "",
 		share: "",
 		nMap: "",
+	},
+	computed: {
+		mapsS: () => {
+			let ret = [ ]
+			let defmap = null
+
+			Object.entries(mapsCtl.maps).forEach((x) => {
+				let mp = x[1]
+
+				if (mp.name == "default") {
+					defmap = mp
+				} else {
+					ret.push(mp)
+				}
+			})
+
+			ret.sort((a, b) => { return strCmp(a.name, b.name) })
+			if (defmap) {
+				ret.unshift(defmap)
+			}
+
+			return ret
+		},
 	},
 	methods: {
 		closeMaps: () => { sidebarSwitch.close() },
@@ -237,6 +260,12 @@ var mapsCtl = new Vue({
 			statusCtl.warn("not implemented yet")
 		},
 
+		setMaps: (lst) => {
+			lst.forEach((m, i) => {
+				mapsCtl.maps[m.id] = m
+			})
+		},
+
 		addMap: () => {
 			backendRq({
 				url: '/maps',
@@ -244,7 +273,7 @@ var mapsCtl = new Vue({
 				data: JSON.stringify({name: mapsCtl.nMap}),
 				success: (data) => {
 					mapsCtl.nMap = ""
-					mapsCtl.maps.push(data)
+					mapsCtl.$set(mapsCtl.maps, data.id, data)
 				},
 				error: (err) => {
 					statusCtl.err("Cannot create map: " + err.message)
@@ -253,7 +282,17 @@ var mapsCtl = new Vue({
 		},
 
 		removeMap: (ev, map) => {
-			statusCtl.warn("not implemented yet")
+			backendRq({
+				url: '/maps',
+				q: [ "id=" + map.id ],
+				method: 'delete',
+				success: (data) => {
+					mapsCtl.$delete(mapsCtl.maps, map.id)
+				},
+				error: (err) => {
+					statusCtl.err("Cannot remove map: " + err.message)
+				},
+			})
 		},
 
 		switchMap: (ev, map) => {
@@ -1101,7 +1140,7 @@ function loadMaps() {
 			url: '/maps',
 			method: 'GET',
 			success: (data) => {
-				mapsCtl.maps = data.maps
+				mapsCtl.setMaps(data.maps)
 				mapsCtl.current = data.maps[0].id
 				menuCtl.current = data.maps[0].name
 				console.log("select map: ", mapsCtl.current)
