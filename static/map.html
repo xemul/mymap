@@ -22,7 +22,115 @@
 
 <div id="hidebarb">
 <div id="hidebar">
-	<div id="timeline" v-if="show.n == 'timeline'">
+</div>
+</div>
+
+<div id="sidebarb">
+<div id="sidebar">
+	<div id="menu">
+		<div id="login">
+			<span v-if="viewmap != null">
+				<img src="static/img/show.svg" title="view mode">
+			</span>
+			<span v-if="sess == null"><img src="static/img/more.svg"></span>
+			<span v-if="sess != null">
+				<span v-if="sess.user == null">
+					<a href="/login"><img src="static/img/login.svg"></a></span>
+				<span v-if="sess.user != null">{{sess.user.name}}
+					<a href="/logout"><img src="static/img/logout.svg" height=20px></a></span>
+			</span>
+		</div>
+
+		<div id="other">
+			<a href="#" v-on:click="showPoints($event)">
+				<img src="static/img/points.svg" title="Points" height=20px></a>
+			<a href="#" v-on:click="showAreas($event)">
+				<img src="static/img/areas.svg" title="Areas" height=20px></a>
+
+			<span v-if="sess != null && sess.user != null">
+				<a href="#" v-on:click="showMaps($event)">
+					<img src="static/img/maps.svg" title="Maps" height=20px></a>
+			</span>
+			<a href="#" v-on:click="showTimeline($event)">
+				<img src="static/img/timeline.svg" title="Timeline" height=20px></a>
+			<a href="#" v-on:click="showRating($event)">
+				<img src="static/img/rating.svg" title="Rating" height=20px></a>
+		</div>
+	</div>
+	<div id="maps" v-if="sidebar.n == 'maps'">
+		<hr>
+		<div class="right">
+			<a href="#" v-on:click="closeMaps($event)" align="right"><img src="static/img/close.svg"></a>
+		</div>
+		Maps
+		<table border=0>
+		<tr v-for="m in maps">
+			<td>
+				<span v-if="m.id == current"><img src="static/img/cursor.svg"></span>
+			</td>
+			<td>
+				<a href="#" v-on:click="switchMap($event, m)">
+					<span v-if="m.name">{{m.name}}</span>
+					<span v-if="!m.name">map.{{m.id}}</span>
+				</a>
+			</td>
+			<td> <small>({{m.id}})</small> </td>
+			<td>
+				<span v-if="m.id == current || m.name == 'default'">
+				&nbsp;
+				</span>
+				<span v-if="m.id != current && m.name != 'default'">
+				<a href="#" v-on:click="removeMap($event, m)">
+				<img src="static/img/remove.svg">
+				</a>
+				</span>
+			</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>
+			<input v-model="nMap" placeholder="map name">
+			<a href="#" v-on:click="addMap($event)"><img src="static/img/add.svg"></a>
+			</td>
+		</table>
+		<span v-if="share != ''">
+			<a href="#" v-bind:href="share">
+				<img src="static/img/share.svg" title="Link to this map" height=20px></a>
+			<a href="#" v-on:click="saveMapGeos($event)">
+				<img src="static/img/save.svg" title="Save" height=20px></a>
+			<a href="#" v-on:click="loadMapGeos($event)">
+				<img src="static/img/load.svg" title="Load" height=20px></a>
+		</span>
+	</div>
+	<div id="ratings" v-if="sidebar.n == 'ratings'">
+		<hr>
+		<div class="right">
+			<a href="#" v-on:click="closeRatings($event)" align="right"><img src="static/img/close.svg"></a>
+		</div>
+
+		Ratings
+		<div v-if="state != 'ready'">
+			<small>{{state}}...</small>
+		</div>
+			<a href="#" v-on:click="selectCountry($event, '')">
+				<flagimg v-bind:country=sc></flagimg>
+			</a>
+		<table id="visitable">
+		<tr v-for="(pt, idx) in pointsS">
+			<td><rateimg v-bind:rt=pt.irating></rateimg><small>{{pt.rating}}/{{pt.nr}}</small></td>
+			<td><a href="#" v-on:click="highlightPoint($event, pt.pt)"><img src="static/img/locate.svg"></a>
+			{{pt.pt.name}}</td>
+			<td>
+				<template v-for="c in pt.pt.countries">
+					<a href="#" v-on:click="selectCountry($event, c)">
+					<flagimg v-bind:country=c></flagimg>
+					</a>
+				</template>
+			</td>
+		</tr>
+		</table>
+	</div>
+	<div id="timeline" v-if="sidebar.n == 'timeline'">
 		<hr>
 		<div class="right">
 			<a href="#" v-on:click="closeTimeline($event)" align="right"><img src="static/img/close.svg"></a>
@@ -52,72 +160,7 @@
 		</tr>
 		</table>
 	</div>
-	<div id="ratings" v-if="show.n == 'ratings'">
-		<hr>
-		<div class="right">
-			<a href="#" v-on:click="closeRatings($event)" align="right"><img src="static/img/close.svg"></a>
-		</div>
-
-		Ratings
-		<div v-if="state != 'ready'">
-			<small>{{state}}...</small>
-		</div>
-			<a href="#" v-on:click="selectCountry($event, '')">
-				<flagimg v-bind:country=sc></flagimg>
-			</a>
-		<table id="visitable">
-		<tr v-for="(pt, idx) in pointsS">
-			<td><rateimg v-bind:rt=pt.irating></rateimg><small>{{pt.rating}}</small></td>
-			<td><a href="#" v-on:click="highlightPoint($event, pt.pt)"><img src="static/img/locate.svg"></a>
-			{{pt.pt.name}}</td>
-			<td>
-				<template v-for="c in pt.pt.countries">
-					<a href="#" v-on:click="selectCountry($event, c)">
-					<flagimg v-bind:country=c></flagimg>
-					</a>
-				</template>
-			</td>
-		</tr>
-		</table>
-	</div>
-	<div id="points" v-if="show.n == 'points'">
-		<hr>
-		<div class="right">
-			<a href="#" v-on:click="closePoints($event)" align="right"><img src="static/img/close.svg"></a>
-		</div>
-		Points
-		<a href="#" v-on:click="hide.toggle($event)">
-			<img v-if="hide.i == 0" src="static/img/show.svg">
-			<img v-if="hide.i == 1" src="static/img/hide.svg">
-		</a>
-			<a href="#" v-on:click="sortedN.toggle()">
-				<img v-if="sortedN.i == 0" src="static/img/unsort.svg">
-				<img v-if="sortedN.i == 1" src="static/img/sort.svg">
-				<img v-if="sortedN.i == 2" src="static/img/sort-r.svg">
-			</a>
-		<table border=0>
-			<tr v-for="bkt in loadedS">
-				<td valign="top" align="right">
-				<flaglist v-bind:list=bkt.countries></flaglist>
-				<small>[{{bkt.pts.length}}]</small>
-				</td>
-				<td><table border=0 width="100%">
-				<tr v-for="pnt in bkt.pts">
-					<td>
-					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="static/img/locate.svg"></a>
-					</td>
-					<td width="80%">
-					{{pnt.name}}
-					</td>
-					<td>
-					<a href="#" v-on:click="removePoint($event, pnt)"><img src="static/img/remove.svg"></a>
-					</td>
-				</tr>
-				</table></td>
-			</tr>
-		</table>
-	</div>
-	<div id="areas" v-if="show.n == 'areas'">
+	<div id="areas" v-if="sidebar.n == 'areas'">
 		<hr>
 		<div class="right">
 			<a href="#" v-on:click="closeAreas($event)" align="right"><img src="static/img/close.svg"></a>
@@ -159,93 +202,44 @@
 			</table>
 		</ul>
 	</div>
-	<div id="maps" v-if="show.n == 'maps'">
+	<div id="points" v-if="sidebar.n == 'points'">
 		<hr>
 		<div class="right">
-			<a href="#" v-on:click="closeMaps($event)" align="right"><img src="static/img/close.svg"></a>
+			<a href="#" v-on:click="closePoints($event)" align="right"><img src="static/img/close.svg"></a>
 		</div>
-		Maps<br>
-		Current:&nbsp;
-		<span v-if="share != ''">
-			<a href="#" v-bind:href="share">
-				<img src="static/img/share.svg" title="Link to this map" height=20px></a>
-			<a href="#" v-on:click="saveAreas($event)">
-				<img src="static/img/save.svg" title="Save" height=20px></a>
-			<a href="#" v-on:click="loadAreas($event)">
-				<img src="static/img/load.svg" title="Load" height=20px></a>
-		</span>
+		Points
+		<a href="#" v-on:click="hide.toggle($event)">
+			<img v-if="hide.i == 0" src="static/img/show.svg">
+			<img v-if="hide.i == 1" src="static/img/hide.svg">
+		</a>
+			<a href="#" v-on:click="sortedN.toggle()">
+				<img v-if="sortedN.i == 0" src="static/img/unsort.svg">
+				<img v-if="sortedN.i == 1" src="static/img/sort.svg">
+				<img v-if="sortedN.i == 2" src="static/img/sort-r.svg">
+			</a>
 		<table border=0>
-		<tr v-for="m in maps">
-			<td>
-				<span v-if="m.id == current"><img src="static/img/cursor.svg"></span>
-			</td>
-			<td>
-				<a href="#" v-on:click="switchMap($event, m)">
-					<span v-if="m.name">{{m.name}}</span>
-					<span v-if="!m.name">map.{{m.id}}</span>
-				</a>
-				<small>({{m.id}})</small>
-			</td>
-			<td>
-				<span v-if="m.id == current || m.name == 'default'">
-				&nbsp;
-				</span>
-				<span v-if="m.id != current && m.name != 'default'">
-				<a href="#" v-on:click="removeMap($event, m)">
-				<img src="static/img/remove.svg">
-				</a>
-				</span>
-			</td>
-		</tr>
-		<tr>
-			<td></td>
-			<td>
-			<input v-model="nMap" placeholder="map name">
-			<a href="#" v-on:click="addMap($event)"><img src="static/img/add.svg"></a>
-			</td>
+			<tr v-for="bkt in loadedS">
+				<td valign="top" align="right">
+				<flaglist v-bind:list=bkt.countries></flaglist>
+				<small>[{{bkt.pts.length}}]</small>
+				</td>
+				<td><table border=0 width="100%">
+				<tr v-for="pnt in bkt.pts">
+					<td>
+					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="static/img/locate.svg"></a>
+					</td>
+					<td width="80%">
+					{{pnt.name}}
+					</td>
+					<td>
+					<a href="#" v-on:click="removePoint($event, pnt)"><img src="static/img/remove.svg"></a>
+					</td>
+				</tr>
+				</table></td>
+			</tr>
 		</table>
 	</div>
-</div>
-</div>
-
-<div id="sidebarb">
-<div id="sidebar">
-	<div id="menu">
-		<div id="login">
-			<span v-if="viewmap != null">
-				<img src="static/img/show.svg" title="view mode">
-			</span>
-			<span v-if="sess == null"><img src="static/img/more.svg"></span>
-			<span v-if="sess != null">
-				<span v-if="sess.user == null">
-					<a href="/login"><img src="static/img/login.svg"></a></span>
-				<span v-if="sess.user != null">{{sess.user.name}}
-					<a href="/logout"><img src="static/img/logout.svg" height=20px></a></span>
-			</span>
-		</div>
-
-		<div id="other">
-			<a href="#" v-on:click="showPoints($event)">
-				<img src="static/img/points.svg" title="Points" height=20px></a>
-			<a href="#" v-on:click="showAreas($event)">
-				<img src="static/img/areas.svg" title="Areas" height=20px></a>
-
-			<span v-if="sess != null && sess.user != null">
-				<a href="#" v-on:click="showMaps($event)">
-					<img src="static/img/maps.svg" title="Maps" height=20px></a>
-			</span>
-			<a href="#" v-on:click="showTimeline($event)">
-				<img src="static/img/timeline.svg" title="Timeline" height=20px></a>
-			<a href="#" v-on:click="showRating($event)">
-				<img src="static/img/rating.svg" title="Rating" height=20px></a>
-		</div>
-	</div>
-	<div id="status" v-if="message != ''">
-		<span v-if="type == 'error'" class="error"> {{message}} </span>
-		<span v-if="type == 'warning'" class="warning"> {{message}} </span>
-		<span v-if="type == 'info'" class="info"> {{message}} </span>
-	</div>
-	<div id="pprops" v-if="point != null">
+	<div id="pprops" v-if="sidebar.n == 'props'">
 		<hr>
 		<div class="right">
 			<a href="#" v-on:click="closeProps($event)" align="right"><img src="static/img/close.svg"></a>
@@ -284,17 +278,17 @@
 		</span>
 
 	</div>
-	<div id="marker" v-if="latlng != null">
+	<div id="marker" v-if="sidebar.n == 'marker'">
 		<hr>
 		<div class="right">
-			<a href="#" v-on:click="clearMarker($event)"><img src="static/img/close.svg"></a>
+			<a href="#" v-on:click="closeMarker($event)"><img src="static/img/close.svg"></a>
 		</div>
 
 		<img src="static/img/point.svg">
 		{{latlng.lat.toFixed(4)}} / {{latlng.lng.toFixed(4)}}
 		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
 	</div>
-	<div id="selection" v-if="available.length != 0">
+	<div id="selection" v-if="sidebar.n == 'marker' && available.length != 0">
 		<img src="static/img/area.svg">
 		<template v-for="area in available">
 			<div v-if="show.show(area)">
@@ -307,6 +301,11 @@
 		<img src="static/img/place.svg">
 		<input v-model="pointName" placeholder="enter the point name">
 		<a href="#" v-on:click="loadSelected($event)"><img src="static/img/add.svg"></a>
+	</div>
+	<div id="status" v-if="message != ''">
+		<span v-if="type == 'error'" class="error"> {{message}} </span>
+		<span v-if="type == 'warning'" class="warning"> {{message}} </span>
+		<span v-if="type == 'info'" class="info"> {{message}} </span>
 	</div>
 </div>
 </div>

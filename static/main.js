@@ -140,6 +140,33 @@ Vue.component('flaglist', {
 })
 
 //
+// Sidebar
+//
+
+var sidebarSwitch = {
+	n: "",
+	clear: null,
+}
+
+sidebarSwitch.show = (name, clear) => {
+	if (sidebarSwitch.clear != null) {
+		sidebarSwitch.clear()
+	}
+
+	sidebarSwitch.n = name
+	sidebarSwitch.clear = clear
+}
+
+sidebarSwitch.close = () => {
+	if (sidebarSwitch.clear != null) {
+		sidebarSwitch.clear()
+
+		sidebarSwitch.n = ""
+		sidebarSwitch.clear = null
+	}
+}
+
+//
 // Hidebar stuff
 //
 
@@ -165,17 +192,23 @@ hidebar.close = () => {
 var mapsCtl = new Vue({
 	el: '#maps',
 	data: {
-		show: hidebar,
+		sidebar: sidebarSwitch,
+
 		maps: [],
 		current: "",
 		share: "",
 		nMap: "",
 	},
 	methods: {
-		closeMaps: () => { hidebar.close() },
+		closeMaps: () => { sidebarSwitch.close() },
+		clearMaps: () => {},
 
-		saveAreas: () => {},
-		loadAreas: () => {},
+		saveMapGeos: () => {
+			statusCtl.warn("not implemented yet")
+		},
+		loadMapGeos: () => {
+			statusCtl.warn("not implemented yet")
+		},
 
 		addMap: () => {
 			backendRq({
@@ -193,6 +226,7 @@ var mapsCtl = new Vue({
 		},
 
 		removeMap: (ev, map) => {
+			statusCtl.warn("not implemented yet")
 		},
 
 		switchMap: (ev, map) => {
@@ -218,15 +252,24 @@ var menuCtl = new Vue({
 		viewmap: null,
 	},
 	methods: {
-		showAreas: () => { hidebar.show("areas") },
-		showPoints: () => { hidebar.show("points") },
-		showMaps: () => { hidebar.show("maps") },
+		showMaps: () => {
+			sidebarSwitch.show("maps", mapsCtl.clearMaps)
+		},
+
+		showPoints: () => {
+			sidebarSwitch.show("points", pointsCtl.clearPoints)
+		},
+
+		showAreas: () => {
+			sidebarSwitch.show("areas", areasCtl.clearAreas)
+		},
+
 		showTimeline: () => {
-			hidebar.show("timeline")
+			sidebarSwitch.show("timeline", timelineCtl.clearTimeline)
 			timelineCtl.load()
 		},
 		showRating: () => {
-			hidebar.show("ratings")
+			sidebarSwitch.show("ratings", ratingCtl.clearRatings)
 			ratingCtl.load()
 		},
 	},
@@ -276,6 +319,8 @@ function getCountries(area) {
 var selectionCtl = new Vue({
 	el: '#selection',
 	data: {
+		sidebar: sidebarSwitch,
+
 		available: [],
 		selected: [],
 		pointName: "",
@@ -283,10 +328,6 @@ var selectionCtl = new Vue({
 		show: showTypesToggle,
 	},
 	methods: {
-		move: (latlng) => {
-			selectionCtl.clearSelection()
-		},
-
 		clearSelection: () => {
 			selectionCtl.pointName = ""
 			selectionCtl.available = []
@@ -360,8 +401,7 @@ var selectionCtl = new Vue({
 				pointsLayer.addPoint(rq.point)
 			}
 
-			markerLayer.remove()
-			selectionCtl.clearSelection()
+			markerCtl.closeMarker()
 		},
 	}
 })
@@ -395,8 +435,8 @@ var osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
 mymap.addLayer(osm);
 
 mymap.on('click', (e) => {
-	markerLayer.move(e.latlng)
-	selectionCtl.move(e.latlng)
+	markerCtl.showMarker(e.latlng)
+	selectionCtl.clearSelection()
 
 	axios.get('https://global.mapit.mysociety.org/point/4326/'+e.latlng.lng+','+e.latlng.lat).
 		then((resp) => {
@@ -404,7 +444,7 @@ mymap.on('click', (e) => {
 		}).
 		catch((err) => {
 			statusCtl.err("cannot find areas at the point: " + err.message)
-			markerCtl.clearMarker()
+			markerCtl.closeMarker()
 		})
 })
 
@@ -415,35 +455,43 @@ mymap.on('click', (e) => {
 var markerLayer = markerLayer || {}
 markerLayer.lm = null
 
-markerLayer.move = function(latlng) {
+markerLayer.set = function(latlng) {
 	if (markerLayer.lm != null) {
 		markerLayer.lm.remove()
 	}
-	markerLayer.lm = L.marker(latlng, {icon: pointIcon}).addTo(mymap);
-	markerCtl.latlng = latlng
-	markerCtl.inside = null
-}
 
-markerLayer.remove = function() {
-	if (markerLayer.lm != null) {
-		markerLayer.lm.remove()
+	if (latlng) {
+		markerLayer.lm = L.marker(latlng, {icon: pointIcon}).addTo(mymap);
+	} else {
 		markerLayer.lm = null
 	}
-
-	markerCtl.latlng = null
-	markerCtl.inside = null
 }
 
 var markerCtl = new Vue({
 	el: '#marker',
 	data: {
+		sidebar: sidebarSwitch,
+
 		latlng: null,
 		inside: [],
 	},
 	methods: {
+		showMarker: (latlng) => {
+			sidebarSwitch.show("marker", markerCtl.clearMarker)
+
+			markerCtl.latlng = latlng
+			markerCtl.inside = null
+			markerLayer.set(latlng)
+		},
+
+		closeMarker: () => { sidebarSwitch.close() },
+
 		clearMarker: (ev) => {
-			markerLayer.remove()
 			selectionCtl.clearSelection()
+
+			markerCtl.latlng = null
+			markerCtl.inside = null
+			markerLayer.set(null)
 		},
 	},
 })
@@ -485,9 +533,10 @@ sortAreas = new toggle(3)
 var areasCtl = new Vue({
 	el: '#areas',
 	data: {
+		sidebar: sidebarSwitch,
+
 		loaded: {},
 		nr: 0,
-		show: hidebar,
 		sorted: sortAreas,
 		pc: "",
 	},
@@ -558,7 +607,8 @@ var areasCtl = new Vue({
 			areasCtl.nr -= 1
 		},
 
-		closeAreas: () => { hidebar.close() },
+		closeAreas: () => { sidebarSwitch.close() },
+		clearAreas: () => {},
 	},
 })
 
@@ -583,10 +633,11 @@ pointsLayer.addPoint = function(pt) {
 var pointsCtl = new Vue({
 	el: '#points',
 	data: {
+		sidebar: sidebarSwitch,
+
 		loaded: {},
 		nr: 0,
 		hide: hidePointsToggle,
-		show: hidebar,
 		sortedN: sortPointNames,
 	},
 	computed: {
@@ -658,7 +709,8 @@ var pointsCtl = new Vue({
 			pointsCtl.nr -= 1
 		},
 
-		closePoints: () => { hidebar.close() },
+		closePoints: () => { sidebarSwitch.close() },
+		clearPoints: () => {},
 	},
 })
 
@@ -669,9 +721,10 @@ var pointsCtl = new Vue({
 var ratingCtl = new Vue({
 	el: '#ratings',
 	data: {
+		sidebar:	sidebarSwitch,
+
 		state:		"",
 		points:		[],
-		show:		hidebar,
 		sc:		"",
 	},
 	computed: {
@@ -740,10 +793,11 @@ var ratingCtl = new Vue({
 			})
 		},
 
-		closeRatings: () => {
+		closeRatings: () => { sidebarSwitch.close() },
+
+		clearRatings: () => {
 			ratingCtl.state = ""
 			ratingCtl.points = []
-			hidebar.close()
 		},
 	},
 })
@@ -755,9 +809,10 @@ var ratingCtl = new Vue({
 var timelineCtl = new Vue({
 	el: '#timeline',
 	data: {
+		sidebar:	sidebarSwitch,
+
 		state:		"",
 		visited:	[],
-		show:		hidebar,
 		sc:		"",
 	},
 	computed: {
@@ -812,10 +867,11 @@ var timelineCtl = new Vue({
 			})
 		},
 
-		closeTimeline: () => {
+		closeTimeline: () => { sidebarSwitch.close() },
+
+		clearTimeline: () => {
 			timelineCtl.state = ""
 			timelineCtl.visited = []
-			hidebar.close()
 		},
 	},
 })
@@ -827,6 +883,8 @@ var timelineCtl = new Vue({
 var propsCtl = new Vue({
 	el: '#pprops',
 	data: {
+		sidebar: sidebarSwitch,
+
 		point: null,
 		visited: [],
 		nvDate: "",
@@ -835,7 +893,9 @@ var propsCtl = new Vue({
 		visits: false,
 	},
 	methods: {
-		closeProps: () => {
+		closeProps: () => { sidebarSwitch.close() },
+
+		clearProps: () => {
 			propsCtl.point = null
 			propsCtl.visited = []
 			propsCtl.clearNv()
@@ -848,6 +908,8 @@ var propsCtl = new Vue({
 		},
 
 		showPoint: (pt) => {
+			sidebarSwitch.show("props", propsCtl.clearProps)
+
 			propsCtl.point = pt
 			propsCtl.visited = []
 			propsCtl.clearNv()
