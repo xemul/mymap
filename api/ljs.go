@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strconv"
 	"math/rand"
+	"io/ioutil"
 	"encoding/json"
 )
 
@@ -188,7 +189,7 @@ func (s *LocalJsonGeos)loadFromFile() (*GeosFile, error) {
 }
 
 func (s *LocalJsonGeos)saveToFile(fc *GeosFile) error {
-	f, err := os.OpenFile("." + s.fname, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
+	f, err := ioutil.TempFile(".", "map.*.json")
 	if err != nil {
 		return err
 	}
@@ -205,7 +206,9 @@ func (s *LocalJsonGeos)saveToFile(fc *GeosFile) error {
 		return err
 	}
 
-	return os.Rename(f.Name(), s.fname)
+	err = os.Rename(f.Name(), s.fname)
+
+	return err
 }
 
 func localGeos(mapid int) *LocalJsonGeos {
@@ -403,7 +406,7 @@ func (lui *LocalUInfo)writeFile(uf *UserFile) error {
 		return errors.New("empty uid")
 	}
 
-	f, err := os.OpenFile("." + lui.uid, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
+	f, err := ioutil.TempFile(".", "lui.*.json")
 	if err != nil {
 		return err
 	}
