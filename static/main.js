@@ -6,9 +6,36 @@ function highlightPoint(ev, pnt) {
 	setTimeout(() => { pnt.marker.setIcon(placeIcon) }, highlightTimeout)
 }
 
+function getZoom(b) {
+	let ne = b.getNorthEast()
+	let sw = b.getSouthWest()
+	let sz = Math.max(Math.abs(sw.lat - ne.lat), Math.abs(sw.lng - ne.lng))
+
+	if (sz > 50) {
+		return 3
+	}
+	if (sz > 25) {
+		return 4
+	}
+	if (sz > 12) {
+		return 5
+	}
+	if (sz > 6) {
+		return 6
+	}
+
+	return 7
+}
+
 function highlightArea(ev, area) {
-	let c = area.layer.getBounds().getCenter()
-	mymap.setView(c, highlightAZoom)
+	if (!area.layer) {
+		return
+	}
+
+	let b = area.layer.getBounds()
+	let c = b.getCenter()
+	let z = getZoom(b)
+	mymap.setView(c, z)
 	area.layer.setStyle(areaHStyle)
 	setTimeout(() => { area.layer.setStyle(areaStyle) }, highlightTimeout)
 }
