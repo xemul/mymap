@@ -216,7 +216,27 @@ func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
+func handleGetMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
+	if c.viewmap != "" {
+		mp := getMap(c, w, r)
+		if mp == nil {
+			return
+		}
+
+		defer mp.Close()
+
+		data, err := mp.Raw()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write(data)
+		return
+	}
+
 	if c.UserId == "" {
 		http.Error(w, "not authorized", http.StatusUnauthorized)
 		return
@@ -224,6 +244,7 @@ func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 
 	db := openDB(c)
 	defer db.Close()
+
 
 	maps, err := db.List()
 	if err != nil {
@@ -280,7 +301,7 @@ func handleDeleteMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		handleListMaps(c, w, r)
+		handleGetMaps(c, w, r)
 	case "POST":
 		handleCreateMap(c, w, r)
 	case "DELETE":

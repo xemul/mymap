@@ -19,6 +19,15 @@ type LocalJsonGeos struct {
 	fname	string
 }
 
+func (s *LocalJsonGeos)Raw() ([]byte, error) {
+	f, err := s.loadFromFile()
+	if err != nil {
+		return nil, err
+	}
+
+	return json.MarshalIndent(f, "", "    ")
+}
+
 func (s *LocalJsonGeos)SavePoint(sv *SaveGeoReq) error {
 	f, err := s.loadFromFile()
 	if err != nil {

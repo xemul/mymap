@@ -12,6 +12,8 @@ type UInfo interface {
 type Geos interface {
 	Close()
 
+	Raw() ([]byte, error)
+
 	SavePoint(*SaveGeoReq) error
 	LoadGeos() (*LoadGeosResp, error)
 	RemoveGeo(int, string) (bool, error)

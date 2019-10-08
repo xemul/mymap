@@ -253,11 +253,13 @@ var mapsCtl = new Vue({
 		closeMaps: () => { sidebarSwitch.close() },
 		clearMaps: () => {},
 
-		saveMapGeos: () => {
-			statusCtl.warn("not implemented yet")
-		},
 		loadMapGeos: () => {
 			statusCtl.warn("not implemented yet")
+		},
+
+		saveMapGeos: () => {
+			console.log("Will save map geos")
+			window.open(config.backend + "/maps?viewmap=" + mapsCtl.current)
 		},
 
 		setMaps: (lst) => {
