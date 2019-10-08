@@ -1,6 +1,8 @@
 package main
 
 type UInfo interface {
+	Close()
+
 	Geos(int) (Geos, error)
 	List() ([]*Map, error)
 	Create(*Map) (error)
@@ -8,6 +10,8 @@ type UInfo interface {
 }
 
 type Geos interface {
+	Close()
+
 	SavePoint(*SaveGeoReq) error
 	LoadGeos() (*LoadGeosResp, error)
 	RemoveGeo(int, string) (bool, error)

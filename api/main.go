@@ -47,7 +47,10 @@ func getMap(c *Claims, w http.ResponseWriter, r *http.Request) Geos {
 		return nil
 	}
 
-	mp, err := openDB(c).Geos(mapid)
+	db := openDB(c)
+	defer db.Close()
+
+	mp, err := db.Geos(mapid)
 	if mp == nil {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -123,6 +126,8 @@ func handleGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer mp.Close()
+
 	switch r.Method {
 	case "GET":
 		handleListGeos(mp, w, r)
@@ -191,6 +196,8 @@ func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	defer mp.Close()
+
 	ptid, err := qInt(r, "id")
 	if err != nil {
 		if !(r.Method == "GET" && err == noValue) {
@@ -215,7 +222,10 @@ func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	maps, err := openDB(c).List()
+	db := openDB(c)
+	defer db.Close()
+
+	maps, err := db.List()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -235,7 +245,10 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = openDB(c).Create(&m)
+	db := openDB(c)
+	defer db.Close()
+
+	err = db.Create(&m)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -252,7 +265,10 @@ func handleDeleteMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = openDB(c).Remove(mapid)
+	db := openDB(c)
+	defer db.Close()
+
+	err = db.Remove(mapid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -268,7 +268,11 @@ func (s *LocalJsonGeos)Remove() error {
 	return os.Remove(s.fname)
 }
 
+func (s *LocalJsonGeos)Close() {
+}
+
 type LocalUInfo struct {
+	refs	int
 	uid	string
 	lock	sync.RWMutex
 }
@@ -452,4 +456,7 @@ func (lui *LocalUInfo)writeFile(uf *UserFile) error {
 	err = os.Rename(f.Name(), lui.uid + ".json")
 
 	return err
+}
+
+func (lui *LocalUInfo)Close() {
 }
