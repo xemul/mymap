@@ -174,33 +174,31 @@
 			<a href="#" v-on:click="preferCountry($event, '')">
 				<flagimg v-bind:country=pc></flagimg>
 			</a>
-		<ul>
-			<table border=0>
-			<tr v-for="area in loadedS">
-				<td align="right">
-				<template v-for="c in area.countries">
-					<a href="#" v-on:click="preferCountry($event, c)">
-					<flagimg v-bind:country=c></flagimg>
-					</a>
-				</template>
-				</td>
-				<td>
-				<a href="#" v-on:click="highlightArea($event, area)"><img src="static/img/locate.svg"></a>
-				</td>
-				<td style="word-break:break-all">
-				{{area.name}}
-				</td>
-				<td>
-				<span v-if="area.state != 'ready'">
-					<small>{{area.state}}...</small>
-				</span>
-				<span v-if="area.state == 'ready'">
-					<a href="#" v-on:click="removeArea($event, area)"><img src="static/img/remove.svg"></a>
-				</span>
-				</td>
-			</tr>
-			</table>
-		</ul>
+		<table border=0>
+		<tr v-for="area in loadedS">
+			<td align="right">
+			<template v-for="c in area.countries">
+				<a href="#" v-on:click="preferCountry($event, c)">
+				<flagimg v-bind:country=c></flagimg>
+				</a>
+			</template>
+			</td>
+			<td>
+			<a href="#" v-on:click="highlightArea($event, area)"><img src="static/img/locate.svg"></a>
+			</td>
+			<td style="word-break:break-all" width="100%">
+			{{area.name}}
+			</td>
+			<td>
+			<span v-if="area.state != 'ready'">
+				<small>{{area.state}}...</small>
+			</span>
+			<span v-if="area.state == 'ready'">
+				<a href="#" v-on:click="removeArea($event, area)"><img src="static/img/remove.svg"></a>
+			</span>
+			</td>
+		</tr>
+		</table>
 	</div>
 	<div id="points" v-if="sidebar.n == 'points'">
 		<hr>
@@ -221,14 +219,16 @@
 			<tr v-for="bkt in loadedS">
 				<td valign="top" align="right">
 				<flaglist v-bind:list=bkt.countries></flaglist>
+				</td>
+				<td valign="top">
 				<small>[{{bkt.pts.length}}]</small>
 				</td>
-				<td><table border=0 width="100%">
+				<td width="100%" valign="top"><table border=0 width=100%>
 				<tr v-for="pnt in bkt.pts">
 					<td>
 					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="static/img/locate.svg"></a>
 					</td>
-					<td width="80%">
+					<td style="word-break:break-all" width="100%">
 					{{pnt.name}}
 					</td>
 					<td>
