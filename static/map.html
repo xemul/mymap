@@ -98,8 +98,10 @@
 				<img src="static/img/share.svg" title="Link to this map" height=20px></a>
 			<a href="#" v-on:click="saveMapGeos($event)">
 				<img src="static/img/save.svg" title="Save" height=20px></a>
-			<a href="#" v-on:click="loadMapGeos($event)">
-				<img src="static/img/load.svg" title="Load" height=20px></a>
+			<div style="display: none">
+			<input type="file" id="fileElem" onchange="loadMapGeos(this.files)">
+			</div>
+			<label class="button" for="fileElem"><img src="static/img/load.svg" height=20px></label>
 		</span>
 	</div>
 	<div id="ratings" v-if="sidebar.n == 'ratings'">

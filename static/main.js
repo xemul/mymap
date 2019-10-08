@@ -253,10 +253,6 @@ var mapsCtl = new Vue({
 		closeMaps: () => { sidebarSwitch.close() },
 		clearMaps: () => {},
 
-		loadMapGeos: () => {
-			statusCtl.warn("not implemented yet")
-		},
-
 		saveMapGeos: () => {
 			console.log("Will save map geos")
 			window.open(config.backend + "/maps?viewmap=" + mapsCtl.current)
@@ -1183,5 +1179,19 @@ function loadGeos() {
 			error: (err) => {
 				statusCtl.err("Cannot load points and areas: " + err.message)
 			},
+	})
+}
+
+function loadMapGeos(files) {
+	backendRq({
+		url: '/maps',
+		method: 'put',
+		data: files[0],
+		success: (data) => {
+			statusCtl.info("Uploaded, please, reload the page")
+		},
+		error: (err) => {
+			statusCtl.err("Cannot upload the map file")
+		},
 	})
 }

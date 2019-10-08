@@ -2,11 +2,13 @@ package main
 
 import (
 	"os"
+	"fmt"
 	"log"
 	"flag"
 	"errors"
 	"strconv"
 	"net/http"
+	"io/ioutil"
 	"encoding/json"
 	"encoding/base64"
 	"github.com/gorilla/mux"
@@ -298,12 +300,28 @@ func handleDeleteMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func handlePutMap(c *Claims, w http.ResponseWriter, r *http.Request) {
+	x := r.Header.Get("X-MapId")
+	log.Printf("Load map %s\n", x)
+	defer r.Body.Close()
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Printf("->[%s]\n", string(data))
+	w.WriteHeader(http.StatusOK)
+}
+
 func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		handleGetMaps(c, w, r)
 	case "POST":
 		handleCreateMap(c, w, r)
+	case "PUT":
+		handlePutMap(c, w, r)
 	case "DELETE":
 		handleDeleteMap(c, w, r)
 	}
@@ -369,13 +387,13 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.Handle("/maps", auth(handleMaps)).Methods("GET", "POST", "DELETE", "OPTIONS")
+	r.Handle("/maps", auth(handleMaps)).Methods("GET", "POST", "DELETE", "PUT", "OPTIONS")
 	r.Handle("/geos", auth(handleGeos)).Methods("GET", "POST", "DELETE", "OPTIONS")
 	r.Handle("/visits", auth(handleVisits)).Methods("GET", "POST", "DELETE", "OPTIONS")
 
 	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "Authorization", "X-MapId"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
-	methodsOk := handlers.AllowedMethods([]string{"GET", "POST", "DELETE", "HEAD", "OPTIONS"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTIONS"})
 
 	err = http.ListenAndServe("0.0.0.0:8082",
 			handlers.CORS(originsOk, headersOk, methodsOk)(r))
