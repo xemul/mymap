@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"log"
-	"sync"
 	"errors"
 	"strconv"
 	"math/rand"
@@ -17,13 +16,9 @@ const (
 type LocalJsonGeos struct {
 	id	int
 	fname	string
-	lock	sync.RWMutex
 }
 
 func (s *LocalJsonGeos)SavePoint(sv *SaveGeoReq) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
 	f, err := s.loadFromFile()
 	if err != nil {
 		return err
@@ -60,9 +55,6 @@ func (s *LocalJsonGeos)SavePoint(sv *SaveGeoReq) error {
 }
 
 func (s *LocalJsonGeos)LoadGeos() (*LoadGeosResp, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
 	f, err := s.loadFromFile()
 	if err != nil {
 		return nil, err
@@ -81,9 +73,6 @@ func (s *LocalJsonGeos)LoadGeos() (*LoadGeosResp, error) {
 }
 
 func (s *LocalJsonGeos)RemoveGeo(id int, typ string) (bool, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
 	f, err := s.loadFromFile()
 	if err != nil {
 		return true, err
@@ -112,9 +101,6 @@ func (s *LocalJsonGeos)RemoveGeo(id int, typ string) (bool, error) {
 }
 
 func (s *LocalJsonGeos)SaveVisit(pid int, sv *SaveVisitReq) error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
 	f, err := s.loadFromFile()
 	if err != nil {
 		return err
@@ -130,9 +116,6 @@ func (s *LocalJsonGeos)SaveVisit(pid int, sv *SaveVisitReq) error {
 }
 
 func (s *LocalJsonGeos)LoadVisits(pid int) (*LoadVisitsResp, error) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
 	f, err := s.loadFromFile()
 	if err != nil {
 		return nil, err
@@ -167,9 +150,6 @@ func (s *LocalJsonGeos)LoadVisits(pid int) (*LoadVisitsResp, error) {
 }
 
 func (s *LocalJsonGeos)RemoveVisit(pid, vn int) (bool, error) {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
 	f, err := s.loadFromFile()
 	if err != nil {
 		return true, err
@@ -274,7 +254,6 @@ func (s *LocalJsonGeos)Close() {
 type LocalUInfo struct {
 	refs	int
 	uid	string
-	lock	sync.RWMutex
 }
 
 func localUInfo(uid string) *LocalUInfo {
@@ -283,9 +262,6 @@ func localUInfo(uid string) *LocalUInfo {
 
 func (lui *LocalUInfo)Geos(mapid int) (Geos, error) {
 	if lui.uid != "" {
-		lui.lock.RLock()
-		defer lui.lock.RUnlock()
-
 		uf, err := lui.loadFile()
 		if err != nil {
 			return nil, err
@@ -301,9 +277,6 @@ func (lui *LocalUInfo)Geos(mapid int) (Geos, error) {
 }
 
 func (lui *LocalUInfo)List() ([]*Map, error) {
-	lui.lock.RLock()
-	defer lui.lock.RUnlock()
-
 	uf, err := lui.loadFile()
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -334,9 +307,6 @@ func (lui *LocalUInfo)Create(m *Map) error {
 		return errors.New("Name taken")
 	}
 
-	lui.lock.Lock()
-	defer lui.lock.Unlock()
-
 	log.Printf("New map @%s\n", lui.uid)
 	uf, err := lui.loadFile()
 	if err != nil {
@@ -362,9 +332,6 @@ func (lui *LocalUInfo)Create(m *Map) error {
 }
 
 func (lui *LocalUInfo)Remove(mapid int) error {
-	lui.lock.Lock()
-	defer lui.lock.Unlock()
-
 	log.Printf("Remove map @%s.%d\n", lui.uid, mapid)
 	uf, err := lui.loadFile()
 	if err != nil {
