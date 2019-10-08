@@ -1,5 +1,12 @@
 package main
 
+type UInfo interface {
+	Geos(int) (Geos, error)
+	List() ([]*Map, error)
+	Create(*Map) (error)
+	Remove(int) (error)
+}
+
 type Geos interface {
 	SavePoint(*SaveGeoReq) error
 	LoadGeos() (*LoadGeosResp, error)
@@ -10,18 +17,6 @@ type Geos interface {
 	RemoveVisit(int, int) (bool, error)
 }
 
-func openMap(uid string, mapid int) (Geos, error) {
-	return OpenLocalMap(uid, mapid)
-}
-
-func listMaps(uid string) ([]*Map, error) {
-	return ListLocalMaps(uid)
-}
-
-func createMap(uid string, m *Map) error {
-	return CreateLocalMap(uid, m)
-}
-
-func removeMap(uid string, mapid int) error {
-	return RemoveLocalMap(uid, mapid)
+func openDB(c *Claims) UInfo {
+	return localUInfo(c.UserId)
 }

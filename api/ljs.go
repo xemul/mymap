@@ -268,9 +268,21 @@ func (s *LocalJsonGeos)Remove() error {
 	return os.Remove(s.fname)
 }
 
-func OpenLocalMap(uid string, mapid int) (*LocalJsonGeos, error) {
-	if uid != "" {
-		uf, err := loadUserFile(uid)
+type LocalUInfo struct {
+	uid	string
+	lock	sync.RWMutex
+}
+
+func localUInfo(uid string) *LocalUInfo {
+	return &LocalUInfo{uid: uid}
+}
+
+func (lui *LocalUInfo)Geos(mapid int) (Geos, error) {
+	if lui.uid != "" {
+		lui.lock.RLock()
+		defer lui.lock.RUnlock()
+
+		uf, err := lui.loadFile()
 		if err != nil {
 			return nil, err
 		}
@@ -284,14 +296,17 @@ func OpenLocalMap(uid string, mapid int) (*LocalJsonGeos, error) {
 	return localGeos(mapid), nil
 }
 
-func ListLocalMaps(uid string) ([]*Map, error) {
-	uf, err := loadUserFile(uid)
+func (lui *LocalUInfo)List() ([]*Map, error) {
+	lui.lock.RLock()
+	defer lui.lock.RUnlock()
+
+	uf, err := lui.loadFile()
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return nil, err
 		}
 
-		uf, err = makeUserFile(uid)
+		uf, err = lui.makeFile()
 		if err != nil {
 			return nil, err
 		}
@@ -310,18 +325,21 @@ func ListLocalMaps(uid string) ([]*Map, error) {
 	return ret, nil
 }
 
-func CreateLocalMap(uid string, m *Map) error {
+func (lui *LocalUInfo)Create(m *Map) error {
 	if m.Name == defaultMapName {
 		return errors.New("Name taken")
 	}
 
-	log.Printf("New map @%s\n", uid)
-	uf, err := loadUserFile(uid)
+	lui.lock.Lock()
+	defer lui.lock.Unlock()
+
+	log.Printf("New map @%s\n", lui.uid)
+	uf, err := lui.loadFile()
 	if err != nil {
 		return err
 	}
 
-	log.Printf("`- make geos @%s\n", uid)
+	log.Printf("`- make geos @%s\n", lui.uid)
 	geos, err := makeEmptyGeos()
 	if err != nil {
 		return err
@@ -330,8 +348,8 @@ func CreateLocalMap(uid string, m *Map) error {
 	m.Id = geos.id
 	uf.Maps[geos.id] = m
 
-	log.Printf("`- write to file @%s [%d]\n", uid, geos.id)
-	err = writeUserFile(uid, uf)
+	log.Printf("`- write to file @%s [%d]\n", lui.uid, geos.id)
+	err = lui.writeFile(uf)
 	if err != nil {
 		geos.Remove()
 	}
@@ -339,9 +357,12 @@ func CreateLocalMap(uid string, m *Map) error {
 	return err
 }
 
-func RemoveLocalMap(uid string, mapid int) error {
-	log.Printf("Remove map @%s.%d\n", uid, mapid)
-	uf, err := loadUserFile(uid)
+func (lui *LocalUInfo)Remove(mapid int) error {
+	lui.lock.Lock()
+	defer lui.lock.Unlock()
+
+	log.Printf("Remove map @%s.%d\n", lui.uid, mapid)
+	uf, err := lui.loadFile()
 	if err != nil {
 		return err
 	}
@@ -352,7 +373,7 @@ func RemoveLocalMap(uid string, mapid int) error {
 	}
 
 	delete(uf.Maps, mapid)
-	err = writeUserFile(uid, uf)
+	err = lui.writeFile(uf)
 	if err != nil {
 		return err
 	}
@@ -362,8 +383,12 @@ func RemoveLocalMap(uid string, mapid int) error {
 	return nil
 }
 
-func loadUserFile(uid string) (*UserFile, error) {
-	f, err := os.Open(uid + ".json")
+func (lui *LocalUInfo)loadFile() (*UserFile, error) {
+	if lui.uid == "" {
+		return nil, errors.New("empty uid")
+	}
+
+	f, err := os.Open(lui.uid + ".json")
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +404,7 @@ func loadUserFile(uid string) (*UserFile, error) {
 	return &uf, nil
 }
 
-func makeUserFile(uid string) (*UserFile, error) {
+func (lui *LocalUInfo)makeFile() (*UserFile, error) {
 	geos, err := makeEmptyGeos()
 	if err != nil {
 		return nil, err
@@ -393,7 +418,7 @@ func makeUserFile(uid string) (*UserFile, error) {
 		},
 	}
 
-	err = writeUserFile(uid, uf)
+	err = lui.writeFile(uf)
 	if err != nil {
 		geos.Remove()
 	}
@@ -402,8 +427,12 @@ func makeUserFile(uid string) (*UserFile, error) {
 }
 
 
-func writeUserFile(uid string, uf *UserFile) error {
-	f, err := os.OpenFile("." + uid, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
+func (lui *LocalUInfo)writeFile(uf *UserFile) error {
+	if lui.uid == "" {
+		return errors.New("empty uid")
+	}
+
+	f, err := os.OpenFile("." + lui.uid, os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
 	if err != nil {
 		return err
 	}
@@ -420,7 +449,7 @@ func writeUserFile(uid string, uf *UserFile) error {
 		return err
 	}
 
-	err = os.Rename(f.Name(), uid + ".json")
+	err = os.Rename(f.Name(), lui.uid + ".json")
 
 	return err
 }

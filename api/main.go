@@ -47,7 +47,7 @@ func getMap(c *Claims, w http.ResponseWriter, r *http.Request) Geos {
 		return nil
 	}
 
-	mp, err := openMap(c.UserId, mapid)
+	mp, err := openDB(c).Geos(mapid)
 	if mp == nil {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -215,7 +215,7 @@ func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	maps, err := listMaps(c.UserId)
+	maps, err := openDB(c).List()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -235,7 +235,7 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = createMap(c.UserId, &m)
+	err = openDB(c).Create(&m)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -252,7 +252,7 @@ func handleDeleteMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = removeMap(c.UserId, mapid)
+	err = openDB(c).Remove(mapid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
