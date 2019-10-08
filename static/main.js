@@ -336,6 +336,13 @@ var statusCtl = new Vue({
 })
 
 function getCountries(area) {
+	if (area.codes) {
+		let code = area.codes["iso3166_1"]
+		if (code) {
+			return [ code.toLowerCase() ]
+		}
+	}
+
 	let ret = []
 	if (area.countries) {
 		area.countries.forEach((item, i) => { ret.push(item.code.toLowerCase()) })
@@ -366,18 +373,18 @@ var selectionCtl = new Vue({
 			let smallest = null
 
 			Object.keys(data).forEach((key, idx) => {
-				var area = data[key]
-
-				areas.push({
+				let area = data[key]
+				let a = {
 					id:		area.id,
 					name:		area.name,
 					state:		"loading",
 					type:		area.type,
 					countries:	getCountries(area),
-				})
+				}
 
-				if (smallest == null || smallest.type < area.type) {
-					smallest = area
+				areas.push(a)
+				if (smallest == null || smallest.type < a.type) {
+					smallest = a
 				}
 			})
 			areas.sort((a,b) => { return strCmp(a.type, b.type) })
@@ -385,7 +392,7 @@ var selectionCtl = new Vue({
 			let inside = { countries: [] }
 
 			if (smallest) {
-				inside.countries = getCountries(smallest)
+				inside.countries = smallest.countries
 				inside.area = smallest.id
 			}
 
