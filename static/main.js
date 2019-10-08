@@ -347,6 +347,11 @@ function getCountries(area) {
 	if (area.countries) {
 		area.countries.forEach((item, i) => { ret.push(item.code.toLowerCase()) })
 	}
+
+	if (ret.length == 0) {
+		return [ "xx" ]
+	}
+
 	return ret
 }
 
