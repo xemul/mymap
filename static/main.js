@@ -260,6 +260,7 @@ var mapsCtl = new Vue({
 			console.log("switch to map", map.id)
 			clearMap()
 			mapsCtl.current = map.id
+			menuCtl.current = map.name
 			if (config.viewmap == "") {
 				mapsCtl.share = "/map?viewmap=" + mapsCtl.current
 			}
@@ -277,6 +278,7 @@ var menuCtl = new Vue({
 	data: {
 		sess: null,
 		viewmap: null,
+		current: "",
 	},
 	methods: {
 		showMaps: () => {
@@ -1101,6 +1103,7 @@ function loadMaps() {
 			success: (data) => {
 				mapsCtl.maps = data.maps
 				mapsCtl.current = data.maps[0].id
+				menuCtl.current = data.maps[0].name
 				console.log("select map: ", mapsCtl.current)
 				if (config.viewmap == "") {
 					mapsCtl.share = "/map?viewmap=" + mapsCtl.current

@@ -49,7 +49,7 @@
 
 			<span v-if="sess != null && sess.user != null">
 				<a href="#" v-on:click="showMaps($event)">
-					<img src="static/img/maps.svg" title="Maps" height=20px></a>
+					<img src="static/img/maps.svg" v-bind:title="'Maps (' + current + ')'" height=20px></a>
 			</span>
 			<a href="#" v-on:click="showTimeline($event)">
 				<img src="static/img/timeline.svg" title="Timeline" height=20px></a>
