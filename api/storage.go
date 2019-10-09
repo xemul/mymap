@@ -1,15 +1,16 @@
 package main
 
-type UInfo interface {
+type UDB interface {
 	Close()
 
-	Geos(int) (Geos, error)
+	openMDB(int, bool) (MDB, error)
 	List() ([]*Map, error)
 	Create(*Map) (error)
 	Remove(int) (error)
 }
 
-type Geos interface {
+type MDB interface {
+	Id() int
 	Close()
 
 	Raw() ([]byte, error)
@@ -23,6 +24,6 @@ type Geos interface {
 	RemoveVisit(int, int) (bool, error)
 }
 
-func openDB(c *Claims) UInfo {
+func openDB(c *Claims) UDB {
 	return localUInfo(c.UserId)
 }

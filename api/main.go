@@ -18,41 +18,30 @@ import (
 
 var noValue = errors.New("no value")
 
-func qInt(r *http.Request, pn string) (int, error) {
-	x := r.URL.Query()[pn]
-	if len(x) == 1 {
-		return strconv.Atoi(x[0])
-	} else {
+func qInt(pn string) (int, error) {
+	if pn == "" {
 		return -1, noValue
 	}
+
+	return strconv.Atoi(pn)
 }
 
 type Claims struct {
 	*jwt.StandardClaims
 	UserId	string		`json:"id"`
-	viewmap	string		`json:"-"`
 }
 
-func getMap(c *Claims, w http.ResponseWriter, r *http.Request) Geos {
-	x := c.viewmap
-	if x == "" {
-		x = r.Header.Get("X-MapId")
-		if x == "" {
-			http.Error(w, "no mapid", http.StatusBadRequest)
-			return nil
-		}
-	}
-
-	mapid, err := strconv.Atoi(x)
+func getMap(c *Claims, w http.ResponseWriter, r *http.Request) MDB {
+	mapid, err := qInt(mux.Vars(r)["mapid"])
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return nil
 	}
 
 	db := openDB(c)
 	defer db.Close()
 
-	mp, err := db.Geos(mapid)
+	mp, err := db.openMDB(mapid, r.Method != "GET")
 	if mp == nil {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -66,7 +55,23 @@ func getMap(c *Claims, w http.ResponseWriter, r *http.Request) Geos {
 	return mp
 }
 
-func handleListGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
+func getPoint(c *Claims, w http.ResponseWriter, r *http.Request) (MDB, int) {
+	mp := getMap(c, w, r)
+	if mp == nil {
+		return nil, -1
+	}
+
+	pid, err := qInt(mux.Vars(r)["pid"])
+	if err != nil {
+		mp.Close()
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return nil, pid
+	}
+
+	return mp, pid
+}
+
+func handleListGeos(mp MDB, w http.ResponseWriter, r *http.Request) {
 	load, err := mp.LoadGeos()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -77,7 +82,7 @@ func handleListGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(load)
 }
 
-func handleSaveGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
+func handleSaveGeos(mp MDB, w http.ResponseWriter, r *http.Request) {
 	var sv SaveGeoReq
 
 	defer r.Body.Close()
@@ -96,20 +101,42 @@ func handleSaveGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleForgetGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
-	areaId, err := qInt(r, "id")
+func handleMapPoint(c *Claims, w http.ResponseWriter, r *http.Request) {
+	mp, pid := getPoint(c, w, r)
+	if mp == nil {
+		return
+	}
+
+	defer mp.Close()
+
+	switch r.Method {
+	case "DELETE":
+		handleRemoveGeo(mp, pid, "point", w)
+	}
+}
+
+func handleMapArea(c *Claims, w http.ResponseWriter, r *http.Request) {
+	mp := getMap(c, w, r)
+	if mp == nil {
+		return
+	}
+
+	defer mp.Close()
+
+	aid, err := qInt(mux.Vars(r)["aid"])
 	if err != nil {
-		http.Error(w, "id must be integer", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	typ := r.URL.Query()["type"]
-	if len(typ) == 0 {
-		http.Error(w, "need type", http.StatusBadRequest)
-		return
+	switch r.Method {
+	case "DELETE":
+		handleRemoveGeo(mp, aid, "area", w)
 	}
+}
 
-	ok, err := mp.RemoveGeo(areaId, typ[0])
+func handleRemoveGeo(mp MDB, gid int, gtype string, w http.ResponseWriter) {
+	ok, err := mp.RemoveGeo(gid, gtype)
 	if err != nil {
 		if ok {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -122,7 +149,7 @@ func handleForgetGeos(mp Geos, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handleGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
+func handleMapGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 	mp := getMap(c, w, r)
 	if mp == nil {
 		return
@@ -135,12 +162,10 @@ func handleGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 		handleListGeos(mp, w, r)
 	case "POST":
 		handleSaveGeos(mp, w, r)
-	case "DELETE":
-		handleForgetGeos(mp, w, r)
 	}
 }
 
-func handleListVisits(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
+func handleListVisits(mp MDB, w http.ResponseWriter, id int) {
 	viss, err := mp.LoadVisits(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -151,7 +176,7 @@ func handleListVisits(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
 	json.NewEncoder(w).Encode(viss)
 }
 
-func handleSaveVisit(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
+func handleSaveVisit(mp MDB, w http.ResponseWriter, r *http.Request, id int) {
 	var sv SaveVisitReq
 
 	defer r.Body.Close()
@@ -170,15 +195,27 @@ func handleSaveVisit(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleDeleteVisit(mp Geos, w http.ResponseWriter, r *http.Request, id int) {
-	vn, err := qInt(r, "vn")
-	if err != nil {
-		http.Error(w, "vn must be integer", http.StatusBadRequest)
+func handlePointVisit(c *Claims, w http.ResponseWriter, r *http.Request) {
+	mp, pid := getPoint(c, w, r)
+	if mp == nil {
 		return
 	}
 
-	log.Printf("[-v] %d:%d\n", id, vn)
+	defer mp.Close()
 
+	vn, err := qInt(mux.Vars(r)["vn"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	switch r.Method {
+	case "DELETE":
+		handleDeleteVisit(mp, w, pid, vn)
+	}
+}
+
+func handleDeleteVisit(mp MDB, w http.ResponseWriter, id, vn int) {
 	ok, err := mp.RemoveVisit(id, vn)
 	if err != nil {
 		if ok {
@@ -192,7 +229,7 @@ func handleDeleteVisit(mp Geos, w http.ResponseWriter, r *http.Request, id int) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
+func handleMapVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 	mp := getMap(c, w, r)
 	if mp == nil {
 		return
@@ -200,45 +237,41 @@ func handleVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 
 	defer mp.Close()
 
-	ptid, err := qInt(r, "id")
-	if err != nil {
-		if !(r.Method == "GET" && err == noValue) {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-
 	switch r.Method {
 	case "GET":
-		handleListVisits(mp, w, r, ptid)
-	case "POST":
-		handleSaveVisit(mp, w, r, ptid)
-	case "DELETE":
-		handleDeleteVisit(mp, w, r, ptid)
+		handleListVisits(mp, w, -1)
 	}
 }
 
-func handleGetMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
-	if c.viewmap != "" {
-		mp := getMap(c, w, r)
-		if mp == nil {
-			return
-		}
-
-		defer mp.Close()
-
-		data, err := mp.Raw()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write(data)
+func handlePointVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
+	mp, pid := getPoint(c, w, r)
+	if mp == nil {
 		return
 	}
 
+	defer mp.Close()
+
+	switch r.Method {
+	case "GET":
+		handleListVisits(mp, w, pid)
+	case "POST":
+		handleSaveVisit(mp, w, r, pid)
+	}
+}
+
+func handleGetMap(mp MDB, w http.ResponseWriter, r *http.Request) {
+	data, err := mp.Raw()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	if c.UserId == "" {
 		http.Error(w, "not authorized", http.StatusUnauthorized)
 		return
@@ -246,7 +279,6 @@ func handleGetMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 
 	db := openDB(c)
 	defer db.Close()
-
 
 	maps, err := db.List()
 	if err != nil {
@@ -281,17 +313,11 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&m)
 }
 
-func handleDeleteMap(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mapid, err := qInt(r, "id")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
+func handleDeleteMap(c *Claims, mp MDB, w http.ResponseWriter, r *http.Request) {
 	db := openDB(c)
 	defer db.Close()
 
-	err = db.Remove(mapid)
+	err := db.Remove(mp.Id())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -300,9 +326,8 @@ func handleDeleteMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handlePutMap(c *Claims, w http.ResponseWriter, r *http.Request) {
-	x := r.Header.Get("X-MapId")
-	log.Printf("Load map %s\n", x)
+func handlePutMap(mp MDB, w http.ResponseWriter, r *http.Request) {
+	log.Printf("Upload map %d\n", mp.Id())
 	defer r.Body.Close()
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -317,13 +342,27 @@ func handlePutMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		handleGetMaps(c, w, r)
+		handleListMaps(c, w, r)
 	case "POST":
 		handleCreateMap(c, w, r)
+	}
+}
+
+func handleMap(c *Claims, w http.ResponseWriter, r *http.Request) {
+	mp := getMap(c, w, r)
+	if mp == nil {
+		return
+	}
+
+	defer mp.Close()
+
+	switch r.Method {
 	case "PUT":
-		handlePutMap(c, w, r)
+		handlePutMap(mp, w, r)
+	case "GET":
+		handleGetMap(mp, w, r)
 	case "DELETE":
-		handleDeleteMap(c, w, r)
+		handleDeleteMap(c, mp, w, r)
 	}
 }
 
@@ -332,20 +371,15 @@ type auth func(*Claims, http.ResponseWriter, *http.Request)
 func (fn auth)ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var c *Claims
 
-	if r.Method == "GET" {
-		viewmap := r.URL.Query()["viewmap"]
-		if len(viewmap) == 1 {
-			c = &Claims{ viewmap: viewmap[0] }
-		}
-	}
-
-	if c == nil {
-		token := r.Header.Get("Authorization")
-		if token == "" {
+	token := r.Header.Get("Authorization")
+	if token == "" {
+		if r.Method != "GET" {
 			http.Error(w, "no token", http.StatusUnauthorized)
 			return
 		}
 
+		c = &Claims{}
+	} else {
 		tok, err := jwt.ParseWithClaims(token, &Claims{},
 			func(tok *jwt.Token) (interface{}, error) {
 				if _, ok := tok.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -387,11 +421,16 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.Handle("/maps", auth(handleMaps)).Methods("GET", "POST", "DELETE", "PUT", "OPTIONS")
-	r.Handle("/geos", auth(handleGeos)).Methods("GET", "POST", "DELETE", "OPTIONS")
-	r.Handle("/visits", auth(handleVisits)).Methods("GET", "POST", "DELETE", "OPTIONS")
+	r.Handle("/maps", auth(handleMaps)).Methods("GET", "POST", "OPTIONS")
+	r.Handle("/maps/{mapid}", auth(handleMap)).Methods("PUT", "DELETE", "GET", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos", auth(handleMapGeos)).Methods("GET", "POST", "OPTIONS")
+	r.Handle("/maps/{mapid}/visits", auth(handleMapVisits)).Methods("GET", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos/points/{pid}", auth(handleMapPoint)).Methods("DELETE", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos/points/{pid}/visits", auth(handlePointVisits)).Methods("GET", "POST", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos/points/{pid}/visits/{vn}", auth(handlePointVisit)).Methods("DELETE", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos/areas/{aid}", auth(handleMapArea)).Methods("DELETE", "OPTIONS")
 
-	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "Authorization", "X-MapId"})
+	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTIONS"})
 

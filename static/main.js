@@ -82,49 +82,26 @@ backendRq = function(rq) {
 		return
 	}
 
+	if (menuCtl.sess == null) {
+		rq.error({message: "login not checked yet"})
+		return
+	}
+
 	let headers = {}
 
-	if (config.viewmap) {
-		if (rq.method != "GET") {
-			statusCtl.warn("View mode, data will not be saved")
-			rq.success({})
-			return
-		}
-
-		if (!rq.q) {
-			rq.q = []
-		}
-		rq.q.push('viewmap=' + config.viewmap)
-	} else {
-		if (menuCtl.sess == null) {
-			rq.error({message: "login not checked yet"})
-			return
-		}
-
-		if (menuCtl.sess.user == null) {
-			statusCtl.warn("You're not logged in, data will not be saved")
-			rq.success({})
-			return
-		}
-
+	if (menuCtl.sess.user != null) {
 		headers = {
 			Authorization: menuCtl.sess.user.token,
 		}
-
-		if (mapsCtl.current) {
-			headers["X-MapId"] = mapsCtl.current
-		}
-	}
-
-	let url = config.backend + rq.url
-
-	if (rq.q) {
-		url += '?' + rq.q.join('&')
+	} else if (rq.method != "get") {
+		statusCtl.warn("You're not logged in, data will not be saved")
+		rq.success({})
+		return
 	}
 
 	axios({
 		method: rq.method,
-		url: url,
+		url: config.backend + rq.url,
 		data: rq.data,
 		headers: headers,
 	}).then((resp) => { rq.success(resp.data) }).catch((err) => { rq.error(err) })
@@ -255,7 +232,7 @@ var mapsCtl = new Vue({
 
 		saveMapGeos: () => {
 			console.log("Will save map geos")
-			window.open(config.backend + "/maps?viewmap=" + mapsCtl.current)
+			window.open(config.backend + "/maps/" + mapsCtl.current)
 		},
 
 		setMaps: (lst) => {
@@ -281,8 +258,7 @@ var mapsCtl = new Vue({
 
 		removeMap: (ev, map) => {
 			backendRq({
-				url: '/maps',
-				q: [ "id=" + map.id ],
+				url: '/maps/' + map.id,
 				method: 'delete',
 				success: (data) => {
 					mapsCtl.$delete(mapsCtl.maps, map.id)
@@ -461,8 +437,8 @@ var selectionCtl = new Vue({
 			}
 
 			backendRq({
-				url: '/geos',
-				method: 'POST',
+				url: '/maps/' + mapsCtl.current + '/geos',
+				method: 'post',
 				data: JSON.stringify(rq),
 				success: (x) => {
 					selectionCtl.commit(rq)
@@ -667,9 +643,8 @@ var areasCtl = new Vue({
 
 		removeArea: (ev, area) => {
 			backendRq({
-					url: '/geos',
-					q: [ 'type=area', 'id=' + area.id ],
-					method: 'DELETE',
+					url: '/geos/' + mapsCtl.current + '/geos/areas/' + area.id,
+					method: 'delete',
 					success: (x) => {
 						areasCtl.dropArea(area)
 					},
@@ -769,9 +744,8 @@ var pointsCtl = new Vue({
 
 		removePoint: (ev, pnt) => {
 			backendRq({
-					url: '/geos',
-					q: [ 'type=point', 'id=' + pnt.id ],
-					method: 'DELETE',
+					url: '/maps/' + mapsCtl.current + '/geos/points/' + pnt.id,
+					method: 'delete',
 					success: (x) => {
 						pointsCtl.dropPoint(pnt)
 					},
@@ -832,8 +806,8 @@ var ratingCtl = new Vue({
 			ratingCtl.points = []
 
 			backendRq({
-				url: '/visits',
-				method: 'GET',
+				url: '/maps/' + mapsCtl.current + '/visits',
+				method: 'get',
 				success: (data) => {
 					ratingCtl.state = "ready"
 					if (data.array) {
@@ -926,8 +900,8 @@ var timelineCtl = new Vue({
 			timelineCtl.visited = []
 
 			backendRq({
-				url: '/visits',
-				method: 'GET',
+				url: '/maps/' + mapsCtl.current + '/visits',
+				method: 'get',
 				success: (data) => {
 					timelineCtl.state = "ready"
 					if (data.array) {
@@ -993,9 +967,8 @@ var propsCtl = new Vue({
 			propsCtl.clearNv()
 
 			backendRq({
-				url: '/visits',
-				q: [ 'id=' + pt.id ],
-				method: 'GET',
+				url: '/maps/' + mapsCtl.current + '/geos/points/' + pt.id + '/visits',
+				method: 'get',
 				success: (data) => {
 					if (data.array) {
 						data.array.forEach((v, i) => {
@@ -1034,6 +1007,10 @@ var propsCtl = new Vue({
 			})
 		},
 
+		pntURL: () => {
+			return  '/maps/' + mapsCtl.current + '/geos/points/' + propsCtl.point.id
+		},
+
 		addVisit: () => {
 			let nv = {
 				date: propsCtl.nvDate,
@@ -1042,9 +1019,8 @@ var propsCtl = new Vue({
 			}
 
 			backendRq({
-				url: '/visits',
-				q: [ 'id=' + propsCtl.point.id ],
-				method: 'POST',
+				url: propsCtl.pntURL() + '/visits',
+				method: 'post',
 				contentType: 'application/json',
 				data: JSON.stringify(nv),
 				success: (data) => {
@@ -1058,9 +1034,8 @@ var propsCtl = new Vue({
 
 		removeVisit: (ev, i) => {
 			backendRq({
-				url: '/visits',
-				q: [ 'id=' + propsCtl.point.id, 'vn=' + propsCtl.visited[i].idx ],
-				method: 'DELETE',
+				url: propsCtl.pntURL() + '/visits/' + propsCtl.visited[i].idx,
+				method: 'delete',
 				success: (data) => {
 					propsCtl.dropVisit(i)
 				},
@@ -1116,6 +1091,8 @@ axios.get('/config')
 function login() {
 	if (config.viewmap) {
 		menuCtl.sess = { user: null }
+		mapsCtl.current = config.viewmap
+		menuCtl.current = 'shared'
 		loadGeos()
 		return
 	}
@@ -1136,7 +1113,7 @@ function login() {
 function loadMaps() {
 	backendRq({
 			url: '/maps',
-			method: 'GET',
+			method: 'get',
 			success: (data) => {
 				mapsCtl.setMaps(data.maps)
 				mapsCtl.current = data.maps[0].id
@@ -1160,8 +1137,8 @@ function clearMap() {
 
 function loadGeos() {
 	backendRq({
-			url: '/geos',
-			method: 'GET',
+			url: '/maps/' + mapsCtl.current + '/geos',
+			method: 'get',
 			success: (data) => {
 				console.log("loaded geos ", data.areas, data.points)
 				if (data.areas) {
@@ -1182,9 +1159,9 @@ function loadGeos() {
 	})
 }
 
-function loadMapGeos(files) {
+function uploadMapGeos(files) {
 	backendRq({
-		url: '/maps',
+		url: '/maps/' + mapsCtl.current,
 		method: 'put',
 		data: files[0],
 		success: (data) => {

@@ -19,6 +19,8 @@ type LocalJsonGeos struct {
 	fname	string
 }
 
+func (s *LocalJsonGeos)Id() int { return s.id }
+
 func (s *LocalJsonGeos)Raw() ([]byte, error) {
 	f, err := s.loadFromFile()
 	if err != nil {
@@ -272,8 +274,12 @@ func localUInfo(uid string) *LocalUInfo {
 	return &LocalUInfo{uid: uid}
 }
 
-func (lui *LocalUInfo)Geos(mapid int) (Geos, error) {
-	if lui.uid != "" {
+func (lui *LocalUInfo)openMDB(mapid int, strict bool) (MDB, error) {
+	if strict {
+		if lui.uid == "" {
+			return nil, errors.New("not allowed")
+		}
+
 		uf, err := lui.loadFile()
 		if err != nil {
 			return nil, err
