@@ -2,13 +2,11 @@ package main
 
 import (
 	"os"
-	"fmt"
 	"log"
 	"flag"
 	"errors"
 	"strconv"
 	"net/http"
-	"io/ioutil"
 	"encoding/json"
 	"encoding/base64"
 	"github.com/gorilla/mux"
@@ -328,14 +326,13 @@ func handleDeleteMap(c *Claims, mp MDB, w http.ResponseWriter, r *http.Request) 
 
 func handlePutMap(mp MDB, w http.ResponseWriter, r *http.Request) {
 	log.Printf("Upload map %d\n", mp.Id())
-	defer r.Body.Close()
-	data, err := ioutil.ReadAll(r.Body)
+
+	err := mp.Put(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Printf("->[%s]\n", string(data))
 	w.WriteHeader(http.StatusOK)
 }
 

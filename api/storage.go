@@ -1,5 +1,9 @@
 package main
 
+import (
+	"io"
+)
+
 type UDB interface {
 	Close()
 
@@ -14,6 +18,7 @@ type MDB interface {
 	Close()
 
 	Raw() ([]byte, error)
+	Put(io.Reader) error
 
 	SavePoint(*SaveGeoReq) error
 	LoadGeos() (*LoadGeosResp, error)

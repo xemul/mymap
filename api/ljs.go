@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"io"
 	"log"
 	"errors"
 	"strconv"
@@ -28,6 +29,33 @@ func (s *LocalJsonGeos)Raw() ([]byte, error) {
 	}
 
 	return json.MarshalIndent(f, "", "    ")
+}
+
+func (s *LocalJsonGeos)Put(src io.Reader) error {
+	to, err := ioutil.TempFile(".", "map.*.json")
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		to.Close()
+		if err != nil {
+			os.Remove(to.Name())
+		}
+	}()
+
+	rdr := io.TeeReader(&io.LimitedReader{R: src, N: 1028 * 1024}, to)
+
+	var f GeosFile
+
+	err = json.NewDecoder(rdr).Decode(&f)
+	if err != nil {
+		return err
+	}
+
+	err = os.Rename(to.Name(), s.fname)
+
+	return err
 }
 
 func (s *LocalJsonGeos)SavePoint(sv *SaveGeoReq) error {
