@@ -36,7 +36,12 @@ func getMap(c *Claims, w http.ResponseWriter, r *http.Request) MDB {
 		return nil
 	}
 
-	db := openDB(c)
+	db, err := storage.openUDB(c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return nil
+	}
+
 	defer db.Close()
 
 	mp, err := db.openMDB(mapid, r.Method != "GET")
@@ -296,7 +301,12 @@ func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := openDB(c)
+	db, err := storage.openUDB(c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	defer db.Close()
 
 	maps, err := db.List()
@@ -319,7 +329,12 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db := openDB(c)
+	db, err := storage.openUDB(c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	defer db.Close()
 
 	err = db.Create(&m)
@@ -333,10 +348,15 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteMap(c *Claims, mp MDB, w http.ResponseWriter, r *http.Request) {
-	db := openDB(c)
+	db, err := storage.openUDB(c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	defer db.Close()
 
-	err := db.Remove(mp.Id())
+	err = db.Remove(mp.Id())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -430,7 +450,14 @@ func main() {
 	var err error
 
 	debug = flag.Bool("debug", false, "debug")
+	strg := flag.String("storage", "ljs:db", "storage type and location")
 	flag.Parse()
+
+	err = setupStorage(*strg)
+	if err != nil {
+		log.Printf("Cannot setup storage: %s", err.Error())
+		return
+	}
 
 	tokenKey, err = base64.StdEncoding.DecodeString(os.Getenv("JWT_SIGN_KEY"))
 	if err != nil || len(tokenKey) == 0 {

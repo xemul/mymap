@@ -15,9 +15,18 @@ const (
 	defaultMapName = "default"
 )
 
+type LocalJsonStorage struct {
+	dir	string
+}
+
+func (ljs *LocalJsonStorage)openUDB(c *Claims) (UDB, error) {
+	return ljs.localUDB(c.UserId), nil
+}
+
 type LocalJsonGeos struct {
 	id	int
 	fname	string
+	s	*LocalJsonStorage
 }
 
 func (s *LocalJsonGeos)Id() int { return s.id }
@@ -31,8 +40,8 @@ func (s *LocalJsonGeos)Raw() ([]byte, error) {
 	return json.MarshalIndent(f, "", "    ")
 }
 
-func (s *LocalJsonGeos)Put(src io.Reader) error {
-	to, err := ioutil.TempFile(".", "map.*.json")
+func (geos *LocalJsonGeos)Put(src io.Reader) error {
+	to, err := ioutil.TempFile(geos.s.dir, "map.*.json")
 	if err != nil {
 		return err
 	}
@@ -53,7 +62,7 @@ func (s *LocalJsonGeos)Put(src io.Reader) error {
 		return err
 	}
 
-	err = os.Rename(to.Name(), s.fname)
+	err = os.Rename(to.Name(), geos.s.dir + "/" + geos.fname)
 
 	return err
 }
@@ -234,8 +243,8 @@ func (s *LocalJsonGeos)RemoveVisit(pid, vn int) (bool, error) {
 	return true, s.saveToFile(f)
 }
 
-func (s *LocalJsonGeos)loadFromFile() (*GeosFile, error) {
-	f, err := os.Open(s.fname)
+func (geos *LocalJsonGeos)loadFromFile() (*GeosFile, error) {
+	f, err := os.Open(geos.s.dir + "/" + geos.fname)
 	if err != nil {
 		return nil, err
 	}
@@ -252,8 +261,8 @@ func (s *LocalJsonGeos)loadFromFile() (*GeosFile, error) {
 	return &ret, nil
 }
 
-func (s *LocalJsonGeos)saveToFile(fc *GeosFile) error {
-	f, err := ioutil.TempFile(".", "map.*.json")
+func (geos *LocalJsonGeos)saveToFile(fc *GeosFile) error {
+	f, err := ioutil.TempFile(geos.s.dir, "map.*.json")
 	if err != nil {
 		return err
 	}
@@ -270,25 +279,26 @@ func (s *LocalJsonGeos)saveToFile(fc *GeosFile) error {
 		return err
 	}
 
-	err = os.Rename(f.Name(), s.fname)
+	err = os.Rename(f.Name(), geos.s.dir + "/" + geos.fname)
 
 	return err
 }
 
-func localGeos(mapid int) *LocalJsonGeos {
+func (u *LocalUInfo)localGeos(mapid int) *LocalJsonGeos {
 	return &LocalJsonGeos{
-		id: mapid,
 		fname: "map." + strconv.Itoa(mapid) + ".json",
+		id: mapid,
+		s: u.s,
 	}
 }
 
-func makeEmptyGeos() (*LocalJsonGeos, error) {
+func (lui *LocalUInfo)makeEmptyGeos() (*LocalJsonGeos, error) {
 	for i := 0; i < 256; i++ {
 		mapid := rand.Intn(1000000)
-		s := localGeos(mapid)
+		geos := lui.localGeos(mapid)
 
 		log.Printf("`- try geos %d\n", mapid)
-		f, err := os.OpenFile(s.fname, os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0600)
+		f, err := os.OpenFile(geos.s.dir + "/" + geos.fname, os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0600)
 		if err != nil {
 			if os.IsExist(err) {
 				continue
@@ -305,26 +315,26 @@ func makeEmptyGeos() (*LocalJsonGeos, error) {
 		}()
 
 		err = json.NewEncoder(f).Encode(&GeosFile{})
-		return s, err
+		return geos, err
 	}
 
 	return nil, errors.New("storage busy")
 }
 
-func (s *LocalJsonGeos)Remove() error {
-	return os.Remove(s.fname)
+func (geos *LocalJsonGeos)Remove() error {
+	return os.Remove(geos.s.dir + "/" + geos.fname)
 }
 
 func (s *LocalJsonGeos)Close() {
 }
 
 type LocalUInfo struct {
-	refs	int
 	uid	string
+	s	*LocalJsonStorage
 }
 
-func localUInfo(uid string) *LocalUInfo {
-	return &LocalUInfo{uid: uid}
+func (s *LocalJsonStorage)localUDB(uid string) *LocalUInfo {
+	return &LocalUInfo{uid: uid, s: s}
 }
 
 func (lui *LocalUInfo)openMDB(mapid int, strict bool) (MDB, error) {
@@ -344,7 +354,7 @@ func (lui *LocalUInfo)openMDB(mapid int, strict bool) (MDB, error) {
 		}
 	}
 
-	return localGeos(mapid), nil
+	return lui.localGeos(mapid), nil
 }
 
 func (lui *LocalUInfo)List() ([]*Map, error) {
@@ -385,7 +395,7 @@ func (lui *LocalUInfo)Create(m *Map) error {
 	}
 
 	log.Printf("`- make geos @%s\n", lui.uid)
-	geos, err := makeEmptyGeos()
+	geos, err := lui.makeEmptyGeos()
 	if err != nil {
 		return err
 	}
@@ -420,7 +430,7 @@ func (lui *LocalUInfo)Remove(mapid int) error {
 		return err
 	}
 
-	localGeos(mapid).Remove()
+	lui.localGeos(mapid).Remove()
 
 	return nil
 }
@@ -430,7 +440,7 @@ func (lui *LocalUInfo)loadFile() (*UserFile, error) {
 		return nil, errors.New("empty uid")
 	}
 
-	f, err := os.Open(lui.uid + ".json")
+	f, err := os.Open(lui.s.dir + "/" + lui.uid + ".json")
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +457,7 @@ func (lui *LocalUInfo)loadFile() (*UserFile, error) {
 }
 
 func (lui *LocalUInfo)makeFile() (*UserFile, error) {
-	geos, err := makeEmptyGeos()
+	geos, err := lui.makeEmptyGeos()
 	if err != nil {
 		return nil, err
 	}
@@ -474,7 +484,7 @@ func (lui *LocalUInfo)writeFile(uf *UserFile) error {
 		return errors.New("empty uid")
 	}
 
-	f, err := ioutil.TempFile(".", "lui.*.json")
+	f, err := ioutil.TempFile(lui.s.dir, "lui.*.json")
 	if err != nil {
 		return err
 	}
@@ -491,7 +501,7 @@ func (lui *LocalUInfo)writeFile(uf *UserFile) error {
 		return err
 	}
 
-	err = os.Rename(f.Name(), lui.uid + ".json")
+	err = os.Rename(f.Name(), lui.s.dir + "/" + lui.uid + ".json")
 
 	return err
 }

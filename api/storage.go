@@ -2,7 +2,13 @@ package main
 
 import (
 	"io"
+	"errors"
+	"strings"
 )
+
+type DB interface {
+	openUDB(*Claims) (UDB, error)
+}
 
 type UDB interface {
 	Close()
@@ -30,6 +36,20 @@ type MDB interface {
 	RemoveVisit(int, int) (bool, error)
 }
 
-func openDB(c *Claims) UDB {
-	return localUInfo(c.UserId)
+var storage DB
+
+func setupStorage(db string) error {
+	x := strings.SplitN(db, ":", 2)
+	if len(x) != 2 {
+		return errors.New("Bad storage option")
+	}
+
+	switch x[0] {
+	case "ljs":
+		storage = &LocalJsonStorage{dir : x[1]}
+	default:
+		return errors.New("Unsupported storage")
+	}
+
+	return nil
 }
