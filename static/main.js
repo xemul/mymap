@@ -942,7 +942,7 @@ var propsCtl = new Vue({
 		nvDate: "",
 		nvTags: "",
 		nvRate: 0,
-		visits: false,
+		editable: false,
 
 		ptName: "",
 	},
@@ -1128,7 +1128,7 @@ function login() {
 		then((resp) => {
 			console.log("authorized as ", resp.data.id)
 			menuCtl.sess = { user: resp.data }
-			propsCtl.visits = true
+			propsCtl.editable = true
 			loadMaps()
 		}).
 		catch((err) => {

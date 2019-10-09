@@ -252,7 +252,9 @@
 		<img src="static/img/place.svg">
 		<span v-if="ptName == ''">
 			{{point.name}}
+			<span v-if="editable">
 			<a href="#" v-on:click="editPoint($event)"><img src="static/img/edit.svg"></a>
+			</span>
 		</span>
 		<span v-if="ptName != ''">
 			<input v-model="ptName">
@@ -275,7 +277,7 @@
 		</tr>
 		</table>
 
-		<span v-if="visits">
+		<span v-if="editable">
 		<input v-model="nvDate" placeholder="dd/mm/yyyy">
 		<input v-model="nvTags" placeholder="tag, ..."><br>
 		<input v-model="nvRate" type="radio" value=-2><img src="static/img/awful.svg">
