@@ -23,6 +23,7 @@ type MDB interface {
 	SavePoint(*SaveGeoReq) error
 	LoadGeos() (*LoadGeosResp, error)
 	RemoveGeo(int, string) (bool, error)
+	PatchPoint(int, *Point) error
 
 	SaveVisit(int, *SaveVisitReq) error
 	LoadVisits(int) (*LoadVisitsResp, error)

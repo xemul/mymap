@@ -249,14 +249,19 @@
 			<a href="#" v-on:click="closeProps($event)" align="right"><img src="static/img/close.svg"></a>
 		</div>
 
-		<img src="static/img/place.svg"> {{point.name}}
+		<img src="static/img/place.svg">
+		<span v-if="ptName == ''">
+			{{point.name}}
+			<a href="#" v-on:click="editPoint($event)"><img src="static/img/edit.svg"></a>
+		</span>
+		<span v-if="ptName != ''">
+			<input v-model="ptName">
+			<a href="#" v-on:click="savePoint($event)"><img src="static/img/ok.svg"></a>
+			<a href="#" v-on:click="unsavePoint($event)"><img src="static/img/cancel.svg"></a>
+		</span>
+		<br>
 		<flaglist v-bind:list=point.countries></flaglist>
-
-		<table id="sumtable">
-		<tr><td>Id</td><td>{{point.id}}</td></tr>
-		<tr><td>Coord</td><td>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</td></tr>
-		<tr><td>Inside</td><td>{{point.area}}:{{point.countries.join(",")}}</td></tr>
-		</table>
+		<small>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</small>
 
 		<br><img src="static/img/visit.svg"><br>
 

@@ -99,6 +99,25 @@ func handleSaveGeos(mp MDB, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func handleUpdatePoint(mp MDB, pid int, w http.ResponseWriter, r *http.Request) {
+	var pt Point
+
+	defer r.Body.Close()
+	err := json.NewDecoder(r.Body).Decode(&pt)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = mp.PatchPoint(pid, &pt)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func handleMapPoint(c *Claims, w http.ResponseWriter, r *http.Request) {
 	mp, pid := getPoint(c, w, r)
 	if mp == nil {
@@ -108,6 +127,8 @@ func handleMapPoint(c *Claims, w http.ResponseWriter, r *http.Request) {
 	defer mp.Close()
 
 	switch r.Method {
+	case "PATCH":
+		handleUpdatePoint(mp, pid, w, r)
 	case "DELETE":
 		handleRemoveGeo(mp, pid, "point", w)
 	}
@@ -422,14 +443,14 @@ func main() {
 	r.Handle("/maps/{mapid}", auth(handleMap)).Methods("PUT", "DELETE", "GET", "OPTIONS")
 	r.Handle("/maps/{mapid}/geos", auth(handleMapGeos)).Methods("GET", "POST", "OPTIONS")
 	r.Handle("/maps/{mapid}/visits", auth(handleMapVisits)).Methods("GET", "OPTIONS")
-	r.Handle("/maps/{mapid}/geos/points/{pid}", auth(handleMapPoint)).Methods("DELETE", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos/points/{pid}", auth(handleMapPoint)).Methods("DELETE", "PATCH", "OPTIONS")
 	r.Handle("/maps/{mapid}/geos/points/{pid}/visits", auth(handlePointVisits)).Methods("GET", "POST", "OPTIONS")
 	r.Handle("/maps/{mapid}/geos/points/{pid}/visits/{vn}", auth(handlePointVisit)).Methods("DELETE", "OPTIONS")
 	r.Handle("/maps/{mapid}/geos/areas/{aid}", auth(handleMapArea)).Methods("DELETE", "OPTIONS")
 
 	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
-	methodsOk := handlers.AllowedMethods([]string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTIONS"})
+	methodsOk := handlers.AllowedMethods([]string{"GET", "PUT", "PATCH", "POST", "DELETE", "HEAD", "OPTIONS"})
 
 	err = http.ListenAndServe("0.0.0.0:8082",
 			handlers.CORS(originsOk, headersOk, methodsOk)(r))

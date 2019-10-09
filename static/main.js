@@ -943,8 +943,29 @@ var propsCtl = new Vue({
 		nvTags: "",
 		nvRate: 0,
 		visits: false,
+
+		ptName: "",
 	},
 	methods: {
+		editPoint: () => { propsCtl.ptName = propsCtl.point.name },
+		unsavePoint: () => { propsCtl.ptName = "" },
+		savePoint: () => {
+			if (propsCtl.ptName != propsCtl.point.name) {
+				backendRq({
+					url: propsCtl.pntURL(),
+					method: 'patch',
+					data: { name: propsCtl.ptName },
+					success: (data) => {
+						propsCtl.point.name = propsCtl.ptName
+						propsCtl.ptName = ""
+					},
+					error: (err) => {
+						statusCtl.err("Cannot save point name: ", err.message)
+					},
+				})
+			}
+		},
+
 		closeProps: () => { sidebarSwitch.close() },
 
 		clearProps: () => {
@@ -1007,10 +1028,6 @@ var propsCtl = new Vue({
 			})
 		},
 
-		pntURL: () => {
-			return  '/maps/' + mapsCtl.current + '/geos/points/' + propsCtl.point.id
-		},
-
 		addVisit: () => {
 			let nv = {
 				date: propsCtl.nvDate,
@@ -1044,6 +1061,11 @@ var propsCtl = new Vue({
 				},
 			})
 		},
+
+		pntURL: () => {
+			return  '/maps/' + mapsCtl.current + '/geos/points/' + propsCtl.point.id
+		},
+
 	},
 })
 

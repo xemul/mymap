@@ -112,6 +112,31 @@ func (s *LocalJsonGeos)LoadGeos() (*LoadGeosResp, error) {
 	return &ret, nil
 }
 
+func (s *LocalJsonGeos)PatchPoint(id int, npt *Point) error {
+	f, err := s.loadFromFile()
+	if err != nil {
+		return err
+	}
+
+	pt, ok := f.Points[id]
+	if !ok {
+		return errors.New("no such point")
+	}
+
+	dirty := false
+
+	if npt.Name != "" {
+		pt.Name = npt.Name
+		dirty = true
+	}
+
+	if !dirty {
+		return nil
+	}
+
+	return s.saveToFile(f)
+}
+
 func (s *LocalJsonGeos)RemoveGeo(id int, typ string) (bool, error) {
 	f, err := s.loadFromFile()
 	if err != nil {
