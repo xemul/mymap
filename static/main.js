@@ -226,6 +226,21 @@ var mapsCtl = new Vue({
 
 			return ret
 		},
+
+		stats: () => {
+			let countries = {}
+
+			Object.entries(areasCtl.loaded).forEach((a) => {
+				let area = a[1]
+				area.countries.forEach((cn, i) => { countries[cn] = true })
+			})
+
+			return {
+				countries: Object.keys(countries).length,
+				areas: areasCtl.nr,
+				points: pointsCtl.nr,
+			}
+		},
 	},
 	methods: {
 		editMap: () => { mapsCtl.mName = mapsCtl.current.name },

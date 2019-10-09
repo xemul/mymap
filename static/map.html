@@ -125,6 +125,14 @@
 			</div>
 			<label class="button" for="fileElem"><img src="static/img/load.svg" height=20px></label>
 		</span>
+		<hr>
+		Statistics
+		<table>
+		<tr><td>{{stats.countries}}</td><td><img src="static/img/country.svg"></td></tr>
+		<tr><td>{{stats.areas}}</td>    <td><img src="static/img/area.svg"></td> </tr>
+		<tr><td>{{stats.points}}</td>   <td><img src="static/img/place.svg"></td></tr>
+		</table>
+
 	</div>
 	<div id="ratings" v-if="sidebar.n == 'ratings'">
 		<hr>
