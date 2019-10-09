@@ -7,6 +7,7 @@ package main
 type Map struct {
 	Id		int			`json:"id"`
 	Name		string			`json:"name"`
+	Copy		*int			`json:"copy,omitempty"`
 }
 
 type Area struct {

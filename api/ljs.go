@@ -4,12 +4,17 @@ import (
 	"os"
 	"io"
 	"log"
+	"time"
 	"errors"
 	"strconv"
 	"math/rand"
 	"io/ioutil"
 	"encoding/json"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 const (
 	defaultMapName = "default"
@@ -292,7 +297,28 @@ func (u *LocalUInfo)localGeos(mapid int) *LocalJsonGeos {
 	}
 }
 
-func (lui *LocalUInfo)makeEmptyGeos() (*LocalJsonGeos, error) {
+func (lui *LocalUInfo)copyGeos(id int) (*LocalJsonGeos, error) {
+	geos := lui.localGeos(id)
+	from, err := os.Open(geos.s.dir + "/" + geos.fname)
+	if err != nil {
+		return nil, err
+	}
+
+	defer from.Close()
+
+	return lui.makeGeos(func(to io.Writer) error {
+		_, err := io.Copy(to, from)
+		return err
+	})
+}
+
+func (lui *LocalUInfo)emptyGeos() (*LocalJsonGeos, error) {
+	return lui.makeGeos(func(f io.Writer) error {
+		return json.NewEncoder(f).Encode(&GeosFile{})
+	})
+}
+
+func (lui *LocalUInfo)makeGeos(fill func(io.Writer) error) (*LocalJsonGeos, error) {
 	for i := 0; i < 256; i++ {
 		mapid := rand.Intn(1000000)
 		geos := lui.localGeos(mapid)
@@ -314,7 +340,7 @@ func (lui *LocalUInfo)makeEmptyGeos() (*LocalJsonGeos, error) {
 			}
 		}()
 
-		err = json.NewEncoder(f).Encode(&GeosFile{})
+		err = fill(f)
 		return geos, err
 	}
 
@@ -419,8 +445,17 @@ func (lui *LocalUInfo)Create(m *Map) error {
 		return err
 	}
 
-	log.Printf("`- make geos @%s\n", lui.uid)
-	geos, err := lui.makeEmptyGeos()
+	var geos *LocalJsonGeos
+
+	if m.Copy != nil {
+		log.Printf("`- copy geos @%s\n", lui.uid)
+		geos, err = lui.copyGeos(*m.Copy)
+		m.Copy = nil
+	} else {
+		log.Printf("`- make geos @%s\n", lui.uid)
+		geos, err = lui.emptyGeos()
+	}
+
 	if err != nil {
 		return err
 	}
@@ -482,7 +517,7 @@ func (lui *LocalUInfo)loadFile() (*UserFile, error) {
 }
 
 func (lui *LocalUInfo)makeFile() (*UserFile, error) {
-	geos, err := lui.makeEmptyGeos()
+	geos, err := lui.emptyGeos()
 	if err != nil {
 		return nil, err
 	}

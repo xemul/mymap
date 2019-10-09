@@ -108,14 +108,14 @@
 			</span>
 			</td>
 		</tr>
-		<tr>
-			<td></td>
-			<td>
-			<input v-model="nMap" placeholder="map name">
-			<a href="#" v-on:click="addMap($event)"><img src="static/img/add.svg"></a>
-			</td>
 		</table>
+		<div>
+			<input v-model="nMap" placeholder="map name">
+			<input type="checkbox" v-model="copyMap" title="copy current map">
+			<a href="#" v-on:click="addMap($event)"><img src="static/img/add.svg"></a>
+		</div>
 		<span v-if="share != ''">
+			<br>
 			<a href="#" v-bind:href="share">
 				<img src="static/img/share.svg" title="Link to this map" height=20px></a>
 			<a href="#" v-on:click="saveMapGeos($event)">

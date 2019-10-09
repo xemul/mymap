@@ -202,6 +202,7 @@ var mapsCtl = new Vue({
 		current: null,
 		share: "",
 		nMap: "",
+		copyMap: false,
 		mName: "",
 	},
 	computed: {
@@ -279,12 +280,20 @@ var mapsCtl = new Vue({
 		},
 
 		addMap: () => {
+			console.log("copy: ", mapsCtl.copyMap)
+
+			let q = {name: mapsCtl.nMap}
+			if (mapsCtl.copyMap) {
+				q["copy"] = mapsCtl.current.id
+			}
+
 			backendRq({
 				url: '/maps',
 				method: 'post',
-				data: JSON.stringify({name: mapsCtl.nMap}),
+				data: q,
 				success: (data) => {
 					mapsCtl.nMap = ""
+					mapsCtl.copyMap = false
 					mapsCtl.$set(mapsCtl.maps, data.id, data)
 				},
 				error: (err) => {
