@@ -297,7 +297,7 @@ var mapsCtl = new Vue({
 			mapsCtl.current = map
 			menuCtl.current = map.name
 			if (config.viewmap == "") {
-				mapsCtl.share = "/map?viewmap=" + mapsCtl.current.id
+				mapsCtl.share = "/map?viewmap=" + map.id
 			}
 			loadGeos()
 		},
@@ -1142,9 +1142,7 @@ axios.get('/config')
 function login() {
 	if (config.viewmap) {
 		menuCtl.sess = { user: null }
-		mapsCtl.current = { id: config.viewmap }
-		menuCtl.current = 'shared'
-		loadGeos()
+		mapsCtl.switchMap(null, { id: config.viewmap, name: 'shared' })
 		return
 	}
 
@@ -1167,13 +1165,7 @@ function loadMaps() {
 			method: 'get',
 			success: (data) => {
 				mapsCtl.setMaps(data.maps)
-				mapsCtl.current = data.maps[0]
-				menuCtl.current = data.maps[0].name
-				console.log("select map: ", mapsCtl.current.id)
-				if (config.viewmap == "") {
-					mapsCtl.share = "/map?viewmap=" + mapsCtl.current.id
-				}
-				loadGeos()
+				mapsCtl.switchMap(null, data.maps[0])
 			},
 			error: (err) => {
 				statusCtl.err("Cannot load maps: " + err.message)
@@ -1191,7 +1183,6 @@ function loadGeos() {
 			url: '/maps/' + mapsCtl.current.id + '/geos',
 			method: 'get',
 			success: (data) => {
-				console.log("loaded geos ", data.areas, data.points)
 				if (data.areas) {
 					data.areas.forEach((item, i) => {
 						item.state = "loading"
