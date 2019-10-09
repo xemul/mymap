@@ -386,6 +386,31 @@ func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func handleUpdateMap(c *Claims, mp MDB, w http.ResponseWriter, r *http.Request) {
+	var nm Map
+
+	defer r.Body.Close()
+	err := json.NewDecoder(r.Body).Decode(&nm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	db, err := storage.openUDB(c)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = db.PatchMap(mp, &nm)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func handleMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 	mp := getMap(c, w, r)
 	if mp == nil {
@@ -397,6 +422,8 @@ func handleMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "PUT":
 		handlePutMap(mp, w, r)
+	case "PATCH":
+		handleUpdateMap(c, mp, w, r)
 	case "GET":
 		handleGetMap(mp, w, r)
 	case "DELETE":
@@ -467,7 +494,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.Handle("/maps", auth(handleMaps)).Methods("GET", "POST", "OPTIONS")
-	r.Handle("/maps/{mapid}", auth(handleMap)).Methods("PUT", "DELETE", "GET", "OPTIONS")
+	r.Handle("/maps/{mapid}", auth(handleMap)).Methods("PUT", "PATCH", "DELETE", "GET", "OPTIONS")
 	r.Handle("/maps/{mapid}/geos", auth(handleMapGeos)).Methods("GET", "POST", "OPTIONS")
 	r.Handle("/maps/{mapid}/visits", auth(handleMapVisits)).Methods("GET", "OPTIONS")
 	r.Handle("/maps/{mapid}/geos/points/{pid}", auth(handleMapPoint)).Methods("DELETE", "PATCH", "OPTIONS")

@@ -202,6 +202,7 @@ var mapsCtl = new Vue({
 		current: null,
 		share: "",
 		nMap: "",
+		mName: "",
 	},
 	computed: {
 		mapsS: () => {
@@ -227,6 +228,27 @@ var mapsCtl = new Vue({
 		},
 	},
 	methods: {
+		editMap: () => { mapsCtl.mName = mapsCtl.current.name },
+		unsaveMap: () => { mapsCtl.mName = "" },
+		saveMap: () => {
+			if (mapsCtl.mName != mapsCtl.current.name) {
+				backendRq({
+					url: '/maps/' + mapsCtl.current.id,
+					method: 'patch',
+					data: { name: mapsCtl.mName },
+					success: (data) => {
+						mapsCtl.current.name = mapsCtl.mName
+						mapsCtl.mName = ""
+					},
+					error: (err) => {
+						statusCtl.err("Cannot save map name: ", err.message)
+					},
+				})
+			} else {
+				mapsCtl.mName = ""
+			}
+		},
+
 		closeMaps: () => { sidebarSwitch.close() },
 		clearMaps: () => {},
 
@@ -963,6 +985,8 @@ var propsCtl = new Vue({
 						statusCtl.err("Cannot save point name: ", err.message)
 					},
 				})
+			} else {
+				propsCtl.ptName = ""
 			}
 		},
 

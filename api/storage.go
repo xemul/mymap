@@ -17,6 +17,7 @@ type UDB interface {
 	List() ([]*Map, error)
 	Create(*Map) (error)
 	Remove(int) (error)
+	PatchMap(MDB, *Map) error
 }
 
 type MDB interface {

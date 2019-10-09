@@ -357,6 +357,31 @@ func (lui *LocalUInfo)openMDB(mapid int, strict bool) (MDB, error) {
 	return lui.localGeos(mapid), nil
 }
 
+func (lui *LocalUInfo)PatchMap(mp MDB, nm *Map) error {
+	uf, err := lui.loadFile()
+	if err != nil {
+		return err
+	}
+
+	m, ok := uf.Maps[mp.Id()]
+	if !ok {
+		return errors.New("No such map")
+	}
+
+	dirty := false
+
+	if nm.Name != "" {
+		m.Name = nm.Name
+		dirty = true
+	}
+
+	if !dirty {
+		return nil
+	}
+
+	return lui.writeFile(uf)
+}
+
 func (lui *LocalUInfo)List() ([]*Map, error) {
 	uf, err := lui.loadFile()
 	if err != nil {

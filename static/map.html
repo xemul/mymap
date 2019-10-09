@@ -70,8 +70,13 @@
 			</td>
 			<td>
 				<span v-if="m == current">
-					<span v-if="m.name">{{m.name}}</span>
-					<span v-if="!m.name">map.{{m.id}}</span>
+					<span v-if="mName == ''">
+						<span v-if="m.name">{{m.name}}</span>
+						<span v-if="!m.name">map.{{m.id}}</span>
+					</span>
+					<span v-if="mName != ''">
+						<input v-model="mName">
+					</span>
 				</span>
 				<span v-if="m != current">
 				<a href="#" v-on:click="switchMap($event, m)">
@@ -81,15 +86,26 @@
 				</span>
 			</td>
 			<td> <small>({{m.id}})</small> </td>
+
 			<td>
-				<span v-if="m == current || m.name == 'default'">
+			<span v-if="m.name == 'default'">
 				&nbsp;
+			</span>
+			<span v-if="m.name != 'default'">
+				<span v-if="m == current">
+					<span v-if="mName == ''">
+						<a href="#" v-on:click="editMap($event)"><img src="static/img/edit.svg"></a>
+					</span>
+					<span v-if="mName != ''">
+						<a href="#" v-on:click="saveMap($event)"><img src="static/img/ok.svg"></a>
+						<a href="#" v-on:click="unsaveMap($event)"><img src="static/img/cancel.svg"></a>
+					</span>
 				</span>
-				<span v-if="m != current && m.name != 'default'">
-				<a href="#" v-on:click="removeMap($event, m)">
-				<img src="static/img/remove.svg">
-				</a>
+				<span v-if="m != current">
+					<a href="#" v-on:click="removeMap($event, m)"><img src="static/img/remove.svg"></a>
+					&nbsp;
 				</span>
+			</span>
 			</td>
 		</tr>
 		<tr>
