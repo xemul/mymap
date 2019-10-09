@@ -1047,6 +1047,11 @@ var propsCtl = new Vue({
 	},
 })
 
+function showPoint(ev, pnt) {
+	highlightPoint(ev, pnt)
+	propsCtl.showPoint(pnt)
+}
+
 function dateScore(date) {
 	let ds = date.split("/")
 

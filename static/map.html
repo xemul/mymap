@@ -231,7 +231,9 @@
 					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="static/img/locate.svg"></a>
 					</td>
 					<td style="word-break:break-all" width="100%">
+					<a href="#" v-on:click="showPoint($event, pnt)">
 					{{pnt.name}}
+					</a>
 					</td>
 					<td>
 					<a href="#" v-on:click="removePoint($event, pnt)"><img src="static/img/remove.svg"></a>
