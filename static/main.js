@@ -199,7 +199,7 @@ var mapsCtl = new Vue({
 		sidebar: sidebarSwitch,
 
 		maps: {},
-		current: "",
+		current: null,
 		share: "",
 		nMap: "",
 	},
@@ -232,7 +232,7 @@ var mapsCtl = new Vue({
 
 		saveMapGeos: () => {
 			console.log("Will save map geos")
-			window.open(config.backend + "/maps/" + mapsCtl.current)
+			window.open(config.backend + "/maps/" + mapsCtl.current.id)
 		},
 
 		setMaps: (lst) => {
@@ -272,10 +272,10 @@ var mapsCtl = new Vue({
 		switchMap: (ev, map) => {
 			console.log("switch to map", map.id)
 			clearMap()
-			mapsCtl.current = map.id
+			mapsCtl.current = map
 			menuCtl.current = map.name
 			if (config.viewmap == "") {
-				mapsCtl.share = "/map?viewmap=" + mapsCtl.current
+				mapsCtl.share = "/map?viewmap=" + mapsCtl.current.id
 			}
 			loadGeos()
 		},
@@ -437,7 +437,7 @@ var selectionCtl = new Vue({
 			}
 
 			backendRq({
-				url: '/maps/' + mapsCtl.current + '/geos',
+				url: '/maps/' + mapsCtl.current.id + '/geos',
 				method: 'post',
 				data: JSON.stringify(rq),
 				success: (x) => {
@@ -643,7 +643,7 @@ var areasCtl = new Vue({
 
 		removeArea: (ev, area) => {
 			backendRq({
-					url: '/geos/' + mapsCtl.current + '/geos/areas/' + area.id,
+					url: '/geos/' + mapsCtl.current.id + '/geos/areas/' + area.id,
 					method: 'delete',
 					success: (x) => {
 						areasCtl.dropArea(area)
@@ -744,7 +744,7 @@ var pointsCtl = new Vue({
 
 		removePoint: (ev, pnt) => {
 			backendRq({
-					url: '/maps/' + mapsCtl.current + '/geos/points/' + pnt.id,
+					url: '/maps/' + mapsCtl.current.id + '/geos/points/' + pnt.id,
 					method: 'delete',
 					success: (x) => {
 						pointsCtl.dropPoint(pnt)
@@ -806,7 +806,7 @@ var ratingCtl = new Vue({
 			ratingCtl.points = []
 
 			backendRq({
-				url: '/maps/' + mapsCtl.current + '/visits',
+				url: '/maps/' + mapsCtl.current.id + '/visits',
 				method: 'get',
 				success: (data) => {
 					ratingCtl.state = "ready"
@@ -900,7 +900,7 @@ var timelineCtl = new Vue({
 			timelineCtl.visited = []
 
 			backendRq({
-				url: '/maps/' + mapsCtl.current + '/visits',
+				url: '/maps/' + mapsCtl.current.id + '/visits',
 				method: 'get',
 				success: (data) => {
 					timelineCtl.state = "ready"
@@ -988,7 +988,7 @@ var propsCtl = new Vue({
 			propsCtl.clearNv()
 
 			backendRq({
-				url: '/maps/' + mapsCtl.current + '/geos/points/' + pt.id + '/visits',
+				url: '/maps/' + mapsCtl.current.id + '/geos/points/' + pt.id + '/visits',
 				method: 'get',
 				success: (data) => {
 					if (data.array) {
@@ -1063,7 +1063,7 @@ var propsCtl = new Vue({
 		},
 
 		pntURL: () => {
-			return  '/maps/' + mapsCtl.current + '/geos/points/' + propsCtl.point.id
+			return  '/maps/' + mapsCtl.current.id + '/geos/points/' + propsCtl.point.id
 		},
 
 	},
@@ -1118,7 +1118,7 @@ axios.get('/config')
 function login() {
 	if (config.viewmap) {
 		menuCtl.sess = { user: null }
-		mapsCtl.current = config.viewmap
+		mapsCtl.current = { id: config.viewmap }
 		menuCtl.current = 'shared'
 		loadGeos()
 		return
@@ -1143,11 +1143,11 @@ function loadMaps() {
 			method: 'get',
 			success: (data) => {
 				mapsCtl.setMaps(data.maps)
-				mapsCtl.current = data.maps[0].id
+				mapsCtl.current = data.maps[0]
 				menuCtl.current = data.maps[0].name
-				console.log("select map: ", mapsCtl.current)
+				console.log("select map: ", mapsCtl.current.id)
 				if (config.viewmap == "") {
-					mapsCtl.share = "/map?viewmap=" + mapsCtl.current
+					mapsCtl.share = "/map?viewmap=" + mapsCtl.current.id
 				}
 				loadGeos()
 			},
@@ -1164,7 +1164,7 @@ function clearMap() {
 
 function loadGeos() {
 	backendRq({
-			url: '/maps/' + mapsCtl.current + '/geos',
+			url: '/maps/' + mapsCtl.current.id + '/geos',
 			method: 'get',
 			success: (data) => {
 				console.log("loaded geos ", data.areas, data.points)
@@ -1188,7 +1188,7 @@ function loadGeos() {
 
 function uploadMapGeos(files) {
 	backendRq({
-		url: '/maps/' + mapsCtl.current,
+		url: '/maps/' + mapsCtl.current.id,
 		method: 'put',
 		data: files[0],
 		success: (data) => {

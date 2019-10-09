@@ -66,20 +66,26 @@
 		<table border=0>
 		<tr v-for="m in mapsS">
 			<td>
-				<span v-if="m.id == current"><img src="static/img/cursor.svg"></span>
+				<span v-if="m == current"><img src="static/img/cursor.svg"></span>
 			</td>
 			<td>
+				<span v-if="m == current">
+					<span v-if="m.name">{{m.name}}</span>
+					<span v-if="!m.name">map.{{m.id}}</span>
+				</span>
+				<span v-if="m != current">
 				<a href="#" v-on:click="switchMap($event, m)">
 					<span v-if="m.name">{{m.name}}</span>
 					<span v-if="!m.name">map.{{m.id}}</span>
 				</a>
+				</span>
 			</td>
 			<td> <small>({{m.id}})</small> </td>
 			<td>
-				<span v-if="m.id == current || m.name == 'default'">
+				<span v-if="m == current || m.name == 'default'">
 				&nbsp;
 				</span>
-				<span v-if="m.id != current && m.name != 'default'">
+				<span v-if="m != current && m.name != 'default'">
 				<a href="#" v-on:click="removeMap($event, m)">
 				<img src="static/img/remove.svg">
 				</a>
