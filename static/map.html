@@ -276,25 +276,41 @@
 	<div id="pprops" v-if="sidebar.n == 'props'">
 		<hr>
 		<div class="right">
+			<span v-if="!editing">
+				<span v-if="editable">
+				<a href="#" v-on:click="editPoint($event)"><img src="static/img/edit.svg"></a>
+				</span>
+			</span>
+			<span v-if="editing">
+				<a href="#" v-on:click="savePoint($event)"><img src="static/img/ok.svg"></a>
+				<a href="#" v-on:click="unsavePoint($event)"><img src="static/img/cancel.svg"></a>
+			</span>
 			<a href="#" v-on:click="closeProps($event)" align="right"><img src="static/img/close.svg"></a>
 		</div>
 
 		<img src="static/img/place.svg">
-		<span v-if="ptName == ''">
+		<span v-if="!editing">
 			{{point.name}}
-			<span v-if="editable">
-			<a href="#" v-on:click="editPoint($event)"><img src="static/img/edit.svg"></a>
-			</span>
 		</span>
-		<span v-if="ptName != ''">
+		<span v-if="editing">
 			<input v-model="ptName">
-			<a href="#" v-on:click="savePoint($event)"><img src="static/img/ok.svg"></a>
-			<a href="#" v-on:click="unsavePoint($event)"><img src="static/img/cancel.svg"></a>
 		</span>
-		<br>
-		<flaglist v-bind:list=point.countries></flaglist>
-		<small>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</small>
-		<a href="#" v-on:click="movePoint($event)"><img src="static/img/move_point.svg" title="move"></a>
+
+			<br>
+			<span v-if="ptLatlng == null">
+			<flaglist v-bind:list=point.countries></flaglist>
+			<small>{{point.lat.toFixed(4)}} / {{point.lng.toFixed(4)}}</small>
+			</span>
+
+			<span v-if="ptLatlng != null">
+				<span v-if="ptInside != null">
+					<flaglist v-bind:list=ptInside.countries></flaglist>
+				</span>
+				<span v-if="ptInside == null">
+					<img src="static/img/more.svg">
+				</span>
+				<small>{{ptLatlng.lat.toFixed(4)}} / {{ptLatlng.lng.toFixed(4)}} *</small>
+			</span>
 
 		<br><img src="static/img/visit.svg"><br>
 
@@ -331,7 +347,6 @@
 		<small v-if="inside != null">({{inside.area}}:{{inside.countries.join(',')}})</small>
 	</div>
 	<div id="selection" v-if="sidebar.n == 'marker' && available.length != 0">
-		<span v-if="forPoint == null">
 		<img src="static/img/area.svg">
 		<template v-for="area in available">
 			<div v-if="show.show(area)">
@@ -344,12 +359,6 @@
 		<img src="static/img/place.svg">
 		<input v-model="pointName" placeholder="enter the point name">
 		<a href="#" v-on:click="loadSelected($event)"><img src="static/img/add.svg"></a>
-		</span>
-
-		<span v-if="forPoint != null">
-		<img src="static/img/move_point.svg" height="16px">&nbsp;{{forPoint.name}}
-		<a href="#" v-on:click="movePoint($event)"><img src="static/img/ok.svg"></a>
-		</span>
 	</div>
 	<div id="status" v-if="message != ''">
 		<span v-if="type == 'error'" class="error"> {{message}} </span>

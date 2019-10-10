@@ -23,6 +23,12 @@ const placeIcon = L.icon({
 	iconAnchor:	[ 7, 20],
 })
 
+const placeMIcon = L.icon({
+	iconUrl:	'static/img/place-m.svg',
+	iconSize:	[14, 21],
+	iconAnchor:	[ 7, 20],
+})
+
 const placeDIcon = L.icon({
 	iconUrl:	'static/img/place-d.svg',
 	iconSize:	[16, 24],

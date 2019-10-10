@@ -162,10 +162,6 @@ var sidebarSwitch = {
 }
 
 sidebarSwitch.show = (name, clear) => {
-	if (sidebarSwitch.n == name) {
-		return
-	}
-
 	if (sidebarSwitch.clear != null) {
 		sidebarSwitch.clear()
 	}
@@ -434,8 +430,6 @@ var selectionCtl = new Vue({
 	data: {
 		sidebar: sidebarSwitch,
 
-		forPoint: null,
-
 		available: [],
 		selected: [],
 		pointName: "",
@@ -450,32 +444,8 @@ var selectionCtl = new Vue({
 		},
 
 		setAvailable: (data) => {
-			let areas = []
-			let smallest = null
-
-			Object.keys(data).forEach((key, idx) => {
-				let area = data[key]
-				let a = {
-					id:		area.id,
-					name:		area.name,
-					state:		"loading",
-					type:		area.type,
-					countries:	getCountries(area),
-				}
-
-				areas.push(a)
-				if (smallest == null || smallest.type < a.type) {
-					smallest = a
-				}
-			})
-			areas.sort((a,b) => { return strCmp(a.type, b.type) })
-
-			let inside = { countries: [] }
-
-			if (smallest) {
-				inside.countries = smallest.countries
-				inside.area = smallest.id
-			}
+			let areas = parseAreas(data)
+			let inside = getInside(areas)
 
 			selectionCtl.available = areas
 			markerCtl.inside = inside
@@ -517,10 +487,6 @@ var selectionCtl = new Vue({
 			}
 
 			markerCtl.closeMarker()
-		},
-
-		movePoint: (ev) => {
-			propsCtl.saveMovePoint(selectionCtl.forPoint)
 		},
 	}
 })
@@ -567,6 +533,38 @@ mymap.on('click', (e) => {
 		})
 })
 
+function parseAreas(data) {
+	let areas = []
+
+	Object.keys(data).forEach((key, idx) => {
+		let area = data[key]
+		let a = {
+			id:		area.id,
+			name:		area.name,
+			state:		"loading",
+			type:		area.type,
+			countries:	getCountries(area),
+		}
+
+		areas.push(a)
+	})
+	areas.sort((a,b) => { return strCmp(a.type, b.type) })
+
+	return areas
+}
+
+function getInside(areas) {
+	let inside = { countries: [] }
+
+	if (areas.length > 0) {
+		let smallest = areas[areas.length-1]
+		inside.countries = smallest.countries
+		inside.area = smallest.id
+	}
+
+	return inside
+}
+
 //
 // Marker
 //
@@ -604,16 +602,11 @@ var markerCtl = new Vue({
 		},
 
 		closeMarker: () => {
-			if (selectionCtl.forPoint == null) {
-				sidebarSwitch.close()
-			} else {
-				propsCtl.showPoint(selectionCtl.forPoint)
-			}
+			sidebarSwitch.close()
 		},
 
 		clearMarker: (ev) => {
 			selectionCtl.clearSelection()
-			selectionCtl.forPoint = null
 
 			markerCtl.latlng = null
 			markerCtl.inside = null
@@ -751,6 +744,9 @@ pointsLayer.addPoint = function(pt) {
 	pt.marker.bindTooltip(pt.name, {direction: "auto", opacity: placeTolltipOpacity})
 	pt.marker.on('click', function(e) {
 		propsCtl.showPoint(pt)
+	})
+	pt.marker.on('dragend', function(e) {
+		propsCtl.draggedPoint()
 	})
 	pointsCtl.addPoint(pt)
 }
@@ -1016,80 +1012,104 @@ var propsCtl = new Vue({
 		nvRate: 0,
 		editable: false,
 
+		editing: false,
 		ptName: "",
+		ptLatlng: null,
+		ptInside: null
 	},
 	methods: {
-		movePoint: () => {
-			let pnt = propsCtl.point
+		draggedPoint: () => {
+			if (propsCtl.editing) {
+				let newll = propsCtl.point.marker.getLatLng()
+				propsCtl.ptLatlng = newll
 
-			markerCtl.showMarker(
-				{
-					lat: propsCtl.point.lat,
-					lng: propsCtl.point.lng,
-				},
-				{
-					area: propsCtl.point.area,
-					countries: propsCtl.point.countries,
-				}
-			)
-
-			selectionCtl.forPoint = pnt
+				axios.get('https://global.mapit.mysociety.org/point/4326/'+newll.lng+','+newll.lat).
+					then((resp) => {
+						if (propsCtl.editing) {
+							let areas = parseAreas(resp.data)
+							let inside = getInside(areas)
+							propsCtl.ptInside = inside
+						}
+					}).
+					catch((err) => {
+						statusCtl.err("cannot find areas at the new point: " + err.message)
+					})
+			}
 		},
 
-		saveMovePoint: (pnt) => {
-			rq = {
-				lat: markerCtl.latlng.lat,
-				lng: markerCtl.latlng.lng,
-				countries: markerCtl.inside.countries,
-				area: markerCtl.inside.area,
+		editPoint: () => {
+			propsCtl.ptName = propsCtl.point.name
+			propsCtl.point.marker.setIcon(placeMIcon)
+			propsCtl.point.marker.dragging.enable()
+
+			propsCtl.editing = true
+		},
+		unsavePoint: () => {
+			propsCtl.editing = false
+
+			propsCtl.ptName = ""
+
+			propsCtl.point.marker.setLatLng(propsCtl.point)
+			propsCtl.point.marker.setIcon(placeIcon)
+			propsCtl.point.marker.dragging.disable()
+			propsCtl.ptLatlng = null
+			propsCtl.ptInside = null
+		},
+		savePoint: () => {
+			if (propsCtl.ptLatlng != null && propsCtl.ptInside == null) {
+				statusCtl.warn("wait a bit...")
+				return
 			}
 
-			propsCtl.showPoint(pnt)
-			backendRq({
-				url: propsCtl.pntURL(),
-				method: 'patch',
-				data: rq,
-				success: (data) => {
-					pnt.lat = rq.lat,
-					pnt.lng = rq.lng,
-					pnt.countries = rq.countries,
-					pnt.area = rq.area,
-					pnt.marker.setLatLng(rq)
-				},
-				error: (err) => {
-					statusCtl.err("Cannot move point: ", err.message)
-				},
-			})
-		},
+			let dirty = false
+			let npt = {}
 
-		editPoint: () => { propsCtl.ptName = propsCtl.point.name },
-		unsavePoint: () => { propsCtl.ptName = "" },
-		savePoint: () => {
 			if (propsCtl.ptName != propsCtl.point.name) {
+				npt.name = propsCtl.ptName
+				dirty = true
+			}
+			if (propsCtl.ptLatlng != null) {
+				npt.lat = propsCtl.ptLatlng.lat
+				npt.lng = propsCtl.ptLatlng.lng
+				npt.area = propsCtl.ptInside.area
+				npt.countries = propsCtl.ptInside.countries
+				dirty = true
+			}
+
+			if (dirty) {
 				backendRq({
 					url: propsCtl.pntURL(),
 					method: 'patch',
-					data: { name: propsCtl.ptName },
+					data: npt,
 					success: (data) => {
-						propsCtl.point.name = propsCtl.ptName
-						propsCtl.ptName = ""
+						if (npt.name) {
+							propsCtl.point.name = npt.name
+						}
+						if (npt.area) {
+							propsCtl.point.lat = npt.lat
+							propsCtl.point.lng = npt.lng
+							propsCtl.point.area = npt.area
+							propsCtl.point.countries = npt.countries
+						}
+
+						propsCtl.unsavePoint()
 					},
 					error: (err) => {
 						statusCtl.err("Cannot save point name: ", err.message)
 					},
 				})
 			} else {
-				propsCtl.ptName = ""
+				propsCtl.unsavePoint()
 			}
 		},
 
 		closeProps: () => { sidebarSwitch.close() },
 
 		clearProps: () => {
-			propsCtl.point = null
 			propsCtl.visited = []
 			propsCtl.clearNv()
 			propsCtl.unsavePoint()
+			propsCtl.point = null
 		},
 
 		clearNv: () => {
