@@ -564,7 +564,7 @@ mymap.on('click', (e) => {
 var markerLayer = markerLayer || {}
 markerLayer.lm = null
 
-markerLayer.set = function(latlng) {
+markerLayer.setMark = function(latlng) {
 	if (markerLayer.lm != null) {
 		markerLayer.lm.remove()
 	}
@@ -590,7 +590,7 @@ var markerCtl = new Vue({
 
 			markerCtl.latlng = latlng
 			markerCtl.inside = null
-			markerLayer.set(latlng)
+			markerLayer.setMark(latlng)
 		},
 
 		closeMarker: () => { sidebarSwitch.close() },
@@ -600,7 +600,7 @@ var markerCtl = new Vue({
 
 			markerCtl.latlng = null
 			markerCtl.inside = null
-			markerLayer.set(null)
+			markerLayer.setMark(null)
 		},
 	},
 })
