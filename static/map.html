@@ -42,6 +42,8 @@
 		</div>
 
 		<div id="other">
+			<a href="#" v-on:click="showFinder($event)">
+				<img src="static/img/find.svg" title="Find" height=20px></a>
 			<a href="#" v-on:click="showPoints($event)">
 				<img src="static/img/points.svg" title="Points" height=20px></a>
 			<a href="#" v-on:click="showAreas($event)">
@@ -56,6 +58,23 @@
 			<a href="#" v-on:click="showRating($event)">
 				<img src="static/img/rating.svg" title="Rating" height=20px></a>
 		</div>
+	</div>
+	<div id="finder" v-if="sidebar.n == 'finder'">
+	<hr>
+		<div class="right">
+			<a href="#" v-on:click="closeFinder($event)" align="right"><img src="static/img/close.svg"></a>
+		</div>
+	<input v-model="findName" placeholder="type the place name here">
+	<img src="static/img/ok.svg" v-on:click="searchName($event)">
+	<div v-if="places.length > 0">
+		<table border=0>
+		<tr v-for="plc in places">
+			<td valign="top"><a href="#" v-on:click="locatePlace($event, plc)">
+				<img src="static/img/locate.svg"></a></td>
+			<td>{{plc.name}} <small>({{plc.type}})</small></td>
+		</tr>
+		</table>
+	</div>
 	</div>
 	<div id="maps" v-if="sidebar.n == 'maps'">
 		<hr>
@@ -128,9 +147,9 @@
 		<hr>
 		Statistics
 		<table>
-		<tr><td>{{stats.countries}}</td><td><img src="static/img/country.svg"></td></tr>
-		<tr><td>{{stats.areas}}</td>    <td><img src="static/img/area.svg"></td> </tr>
-		<tr><td>{{stats.points}}</td>   <td><img src="static/img/place.svg"></td></tr>
+		<tr><td>{{stats.countries}}</td><td><img src="static/img/country.svg" title="countries"></td></tr>
+		<tr><td>{{stats.areas}}</td>    <td><img src="static/img/area.svg" title="areas"></td></tr>
+		<tr><td>{{stats.points}}</td>   <td><img src="static/img/place.svg" title="points"></td></tr>
 		</table>
 
 	</div>
@@ -312,7 +331,7 @@
 				<small>{{ptLatlng.lat.toFixed(4)}} / {{ptLatlng.lng.toFixed(4)}} *</small>
 			</span>
 
-		<br><img src="static/img/visit.svg"><br>
+		<hr><img src="static/img/visit.svg"><br>
 
 		<table id="visitable">
 		<tr v-for="(vis, idx) in visited">

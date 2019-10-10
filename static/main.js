@@ -337,6 +337,40 @@ var mapsCtl = new Vue({
 	},
 })
 
+var finderCtl = new Vue({
+	el: '#finder',
+	data: {
+		sidebar: sidebarSwitch,
+		findName: "",
+		places: [],
+	},
+	methods: {
+		closeFinder: () => { sidebarSwitch.close() },
+		clearSearch: () => { },
+
+		locatePlace: (ev, plc) => {
+			mymap.setView(plc.loc, findZoom)
+		},
+
+		searchName: () => {
+			finderCtl.places = []
+			axios.get('https://nominatim.openstreetmap.org/search?q=' + finderCtl.findName + '&format=json')
+				.then((resp) => {
+					resp.data.forEach((el, i) => {
+						finderCtl.places.push({
+							name: el.display_name,
+							type: el.type,
+							loc: {lat: el.lat, lng: el.lon},
+						})
+					})
+				})
+				.catch((err) => {
+					statusCtl.err("Cannot search by name: " + err.message)
+				})
+		},
+	},
+})
+
 //
 // Sidebar stuff
 //
@@ -349,6 +383,10 @@ var menuCtl = new Vue({
 		current: "",
 	},
 	methods: {
+		showFinder: () => {
+			sidebarSwitch.show("finder", finderCtl.clearSearch)
+		},
+
 		showMaps: () => {
 			sidebarSwitch.show("maps", mapsCtl.clearMaps)
 		},
@@ -708,7 +746,7 @@ var areasCtl = new Vue({
 
 		removeArea: (ev, area) => {
 			backendRq({
-					url: '/geos/' + mapsCtl.current.id + '/geos/areas/' + area.id,
+					url: '/maps/' + mapsCtl.current.id + '/geos/areas/' + area.id,
 					method: 'delete',
 					success: (x) => {
 						areasCtl.dropArea(area)
@@ -1022,6 +1060,7 @@ var propsCtl = new Vue({
 			if (propsCtl.editing) {
 				let newll = propsCtl.point.marker.getLatLng()
 				propsCtl.ptLatlng = newll
+				propsCtl.ptInside = null
 
 				axios.get('https://global.mapit.mysociety.org/point/4326/'+newll.lng+','+newll.lat).
 					then((resp) => {

@@ -25,8 +25,8 @@ const placeIcon = L.icon({
 
 const placeMIcon = L.icon({
 	iconUrl:	'static/img/place-m.svg',
-	iconSize:	[14, 21],
-	iconAnchor:	[ 7, 20],
+	iconSize:	[20, 23],
+	iconAnchor:	[10, 21],
 })
 
 const placeDIcon = L.icon({
@@ -38,6 +38,7 @@ const placeDIcon = L.icon({
 const errorTimeout = 3000
 const highlightTimeout = 1000
 const highlightZoom = 9
+const findZoom = 12
 
 const mapWidth = "75%"
 const mapHeight = "98%"
