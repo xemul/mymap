@@ -144,6 +144,14 @@ func (s *LocalJsonGeos)PatchPoint(id int, npt *Point) error {
 		dirty = true
 	}
 
+	if npt.Area != 0 {
+		pt.Area = npt.Area
+		pt.Lat = npt.Lat
+		pt.Lng = npt.Lng
+		pt.Countries = npt.Countries
+		dirty = true
+	}
+
 	if !dirty {
 		return nil
 	}

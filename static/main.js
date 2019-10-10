@@ -162,6 +162,10 @@ var sidebarSwitch = {
 }
 
 sidebarSwitch.show = (name, clear) => {
+	if (sidebarSwitch.n == name) {
+		return
+	}
+
 	if (sidebarSwitch.clear != null) {
 		sidebarSwitch.clear()
 	}
@@ -430,6 +434,8 @@ var selectionCtl = new Vue({
 	data: {
 		sidebar: sidebarSwitch,
 
+		forPoint: null,
+
 		available: [],
 		selected: [],
 		pointName: "",
@@ -512,6 +518,10 @@ var selectionCtl = new Vue({
 
 			markerCtl.closeMarker()
 		},
+
+		movePoint: (ev) => {
+			propsCtl.saveMovePoint(selectionCtl.forPoint)
+		},
 	}
 })
 
@@ -544,7 +554,7 @@ var osm = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
 mymap.addLayer(osm);
 
 mymap.on('click', (e) => {
-	markerCtl.showMarker(e.latlng)
+	markerCtl.showMarker(e.latlng, null)
 	selectionCtl.clearSelection()
 
 	axios.get('https://global.mapit.mysociety.org/point/4326/'+e.latlng.lng+','+e.latlng.lat).
@@ -582,21 +592,28 @@ var markerCtl = new Vue({
 		sidebar: sidebarSwitch,
 
 		latlng: null,
-		inside: [],
+		inside: null,
 	},
 	methods: {
-		showMarker: (latlng) => {
+		showMarker: (latlng, ins) => {
 			sidebarSwitch.show("marker", markerCtl.clearMarker)
 
 			markerCtl.latlng = latlng
-			markerCtl.inside = null
+			markerCtl.inside = ins
 			markerLayer.setMark(latlng)
 		},
 
-		closeMarker: () => { sidebarSwitch.close() },
+		closeMarker: () => {
+			if (selectionCtl.forPoint == null) {
+				sidebarSwitch.close()
+			} else {
+				propsCtl.showPoint(selectionCtl.forPoint)
+			}
+		},
 
 		clearMarker: (ev) => {
 			selectionCtl.clearSelection()
+			selectionCtl.forPoint = null
 
 			markerCtl.latlng = null
 			markerCtl.inside = null
@@ -1002,6 +1019,49 @@ var propsCtl = new Vue({
 		ptName: "",
 	},
 	methods: {
+		movePoint: () => {
+			let pnt = propsCtl.point
+
+			markerCtl.showMarker(
+				{
+					lat: propsCtl.point.lat,
+					lng: propsCtl.point.lng,
+				},
+				{
+					area: propsCtl.point.area,
+					countries: propsCtl.point.countries,
+				}
+			)
+
+			selectionCtl.forPoint = pnt
+		},
+
+		saveMovePoint: (pnt) => {
+			rq = {
+				lat: markerCtl.latlng.lat,
+				lng: markerCtl.latlng.lng,
+				countries: markerCtl.inside.countries,
+				area: markerCtl.inside.area,
+			}
+
+			propsCtl.showPoint(pnt)
+			backendRq({
+				url: propsCtl.pntURL(),
+				method: 'patch',
+				data: rq,
+				success: (data) => {
+					pnt.lat = rq.lat,
+					pnt.lng = rq.lng,
+					pnt.countries = rq.countries,
+					pnt.area = rq.area,
+					pnt.marker.setLatLng(rq)
+				},
+				error: (err) => {
+					statusCtl.err("Cannot move point: ", err.message)
+				},
+			})
+		},
+
 		editPoint: () => { propsCtl.ptName = propsCtl.point.name },
 		unsavePoint: () => { propsCtl.ptName = "" },
 		savePoint: () => {
@@ -1029,6 +1089,7 @@ var propsCtl = new Vue({
 			propsCtl.point = null
 			propsCtl.visited = []
 			propsCtl.clearNv()
+			propsCtl.unsavePoint()
 		},
 
 		clearNv: () => {
