@@ -104,7 +104,16 @@ backendRq = function(rq) {
 		url: config.backend + rq.url,
 		data: rq.data,
 		headers: headers,
-	}).then((resp) => { rq.success(resp.data) }).catch((err) => { rq.error(err) })
+	})
+	.then((resp) => { rq.success(resp.data) })
+	.catch((err) => {
+		if (err.response.status == 401) {
+			statusCtl.err("Token expired, please, re-login")
+			menuCtl.sess = { user: null }
+		} else {
+			rq.error(err)
+		}
+	})
 }
 
 Vue.component('rateimg', {
