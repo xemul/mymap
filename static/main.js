@@ -6,11 +6,7 @@ function highlightPoint(ev, pnt) {
 	setTimeout(() => { pnt.marker.setIcon(placeIcon) }, highlightTimeout)
 }
 
-function getZoom(b) {
-	let ne = b.getNorthEast()
-	let sw = b.getSouthWest()
-	let sz = Math.max(Math.abs(sw.lat - ne.lat), Math.abs(sw.lng - ne.lng))
-
+function sizeZoom(sz) {
 	if (sz > 50) {
 		return 3
 	}
@@ -23,8 +19,30 @@ function getZoom(b) {
 	if (sz > 6) {
 		return 6
 	}
+	if (sz > 3) {
+		return 7
+	}
+	if (sz > 1) {
+		return 8
+	}
+	if (sz > 0.5) {
+		return 9
+	}
+	if (sz > 0.25) {
+		return 10
+	}
+	if (sz > 0.125) {
+		return 11
+	}
 
-	return 7
+	return 12
+}
+
+function getZoom(b) {
+	let ne = b.getNorthEast()
+	let sw = b.getSouthWest()
+	let sz = Math.max(Math.abs(sw.lat - ne.lat), Math.abs(sw.lng - ne.lng))
+	return sizeZoom(sz)
 }
 
 function highlightArea(ev, area) {
@@ -349,7 +367,9 @@ var finderCtl = new Vue({
 		clearSearch: () => { },
 
 		locatePlace: (ev, plc) => {
-			mymap.setView(plc.loc, findZoom)
+			mymap.setView(plc.loc, sizeZoom(plc.size))
+			let c = L.circle(plc.loc, {radius: 10000 * plc.size}).addTo(mymap)
+			setTimeout(() => { c.remove() }, highlightTimeout)
 		},
 
 		searchName: () => {
@@ -361,6 +381,8 @@ var finderCtl = new Vue({
 							name: el.display_name,
 							type: el.type,
 							loc: {lat: el.lat, lng: el.lon},
+							size: Math.max(Math.abs(el.boundingbox[0] - el.boundingbox[1]),
+									Math.abs(el.boundingbox[2] - el.boundingbox[3])),
 						})
 					})
 				})
