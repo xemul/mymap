@@ -1340,7 +1340,11 @@ function loadMaps() {
 			method: 'get',
 			success: (data) => {
 				mapsCtl.setMaps(data.maps)
-				mapsCtl.switchMap(null, data.maps[0])
+				let defid = 0
+				data.maps.forEach((mp, idx) => {
+					if (mp.name == 'default') { defid = idx }
+				})
+				mapsCtl.switchMap(null, data.maps[defid])
 			},
 			error: (err) => {
 				statusCtl.err("Cannot load maps: " + err.message)

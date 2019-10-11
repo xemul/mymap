@@ -144,7 +144,7 @@ func withPoint(handle geoH) mapH {
 			return
 		}
 
-		col := storage.Col(c.pointsCol(pid))
+		col := storage.Col(c.pointsCol(mapid))
 		defer col.Close()
 
 		handle(c, col, pid, w, r)
@@ -159,7 +159,7 @@ func withArea(handle geoH) mapH {
 			return
 		}
 
-		col := storage.Col(c.areasCol(aid))
+		col := storage.Col(c.areasCol(mapid))
 		defer col.Close()
 
 		handle(c, col, aid, w, r)
@@ -357,7 +357,7 @@ func handleListVisits(c *Claims, pcol Collection, pid Id, w http.ResponseWriter)
 	var pts []*PointX
 	var err error
 
-	if pid == -1 {
+	if pid != -1 {
 		var pt PointX
 		err = pcol.Get(pid, &pt)
 		pts = append(pts, &pt)
@@ -375,7 +375,10 @@ func handleListVisits(c *Claims, pcol Collection, pid Id, w http.ResponseWriter)
 
 	var viss LoadVisitsResp
 	for _, pt := range pts {
-		viss.A = append(viss.A, pt.Vis...)
+		for _, v := range pt.Vis {
+			v.PId = &pt.Id
+			viss.A = append(viss.A, v)
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
