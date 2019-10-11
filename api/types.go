@@ -1,5 +1,9 @@
 package main
 
+import (
+	"encoding/json"
+)
+
 /*
  * Fundamental types
  */
@@ -64,4 +68,9 @@ type LoadGeosResp struct {
 
 type LoadVisitsResp struct {
 	A		[]*Visit		`json:"array"`
+}
+
+type RawGeos struct {
+	Areas		json.RawMessage		`json:"areas"`
+	Points		json.RawMessage		`json:"points"`
 }

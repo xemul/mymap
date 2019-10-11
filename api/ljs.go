@@ -217,3 +217,12 @@ func (lj *LocalJsonCollection)saveFile(jf *localJsonFile) error {
 
 	return err
 }
+
+func (lj *LocalJsonCollection)Raw() ([]byte, error) {
+	jf, err := lj.loadFile()
+	if err != nil {
+		return nil, err
+	}
+
+	return json.MarshalIndent(jf.Set, "", "    ")
+}
