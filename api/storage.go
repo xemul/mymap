@@ -6,7 +6,9 @@ import (
 )
 
 type Id int64
-type Obj interface{}
+type Obj interface{
+	SetId(Id)
+}
 
 type Collection interface {
 	Iter(Obj, func(Id, Obj) error) error

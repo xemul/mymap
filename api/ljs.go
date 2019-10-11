@@ -34,7 +34,7 @@ type LocalJsonCollection struct {
 }
 
 type localJsonFile struct {
-	set	map[Id]json.RawMessage
+	Set	map[Id]json.RawMessage		`json:"set"`
 }
 
 func (lj *LocalJsonCollection)Upd(id Id, obj Obj, ucb func(Obj) error) error {
@@ -43,7 +43,7 @@ func (lj *LocalJsonCollection)Upd(id Id, obj Obj, ucb func(Obj) error) error {
 		return err
 	}
 
-	data, ok := jf.set[id]
+	data, ok := jf.Set[id]
 	if !ok {
 		return IdNotFoundErr
 	}
@@ -53,7 +53,7 @@ func (lj *LocalJsonCollection)Upd(id Id, obj Obj, ucb func(Obj) error) error {
 		err = ucb(obj)
 	}
 	if err == nil {
-		jf.set[id], err = json.Marshal(obj)
+		jf.Set[id], err = json.Marshal(obj)
 	}
 
 	if err != nil {
@@ -71,8 +71,8 @@ func (lj *LocalJsonCollection)Add(id Id, obj Obj) (Id, error) {
 
 	if id == -1 {
 		for i := 0; i < 128; i++ {
-			id = Id(rand.Int())
-			if _, ok := jf.set[id]; ok {
+			id = Id(rand.Int() % 10000000)
+			if _, ok := jf.Set[id]; ok {
 				continue
 			}
 		}
@@ -80,11 +80,13 @@ func (lj *LocalJsonCollection)Add(id Id, obj Obj) (Id, error) {
 		if id == -1 {
 			return -1, errors.New("cannot find free id")
 		}
-	} else if _, ok := jf.set[id]; ok {
+
+		obj.SetId(id)
+	} else if _, ok := jf.Set[id]; ok {
 		return -1, IdExistsErr
 	}
 
-	jf.set[id], err = json.Marshal(obj)
+	jf.Set[id], err = json.Marshal(obj)
 	if err != nil {
 		return -1, err
 	}
@@ -104,11 +106,11 @@ func (lj *LocalJsonCollection)AddMany(og func() (Id, Obj)) error {
 			break
 		}
 
-		if _, ok := jf.set[id]; ok {
+		if _, ok := jf.Set[id]; ok {
 			return IdExistsErr
 		}
 
-		jf.set[id], err = json.Marshal(obj)
+		jf.Set[id], err = json.Marshal(obj)
 		if err != nil {
 			return err
 		}
@@ -123,7 +125,7 @@ func (lj *LocalJsonCollection)Get(id Id, obj Obj) error {
 		return err
 	}
 
-	data, ok := jf.set[id]
+	data, ok := jf.Set[id]
 	if !ok {
 		return IdNotFoundErr
 	}
@@ -141,11 +143,11 @@ func (lj *LocalJsonCollection)Del(id Id) error {
 		return err
 	}
 
-	if _, ok := jf.set[id]; !ok {
+	if _, ok := jf.Set[id]; !ok {
 		return IdNotFoundErr
 	}
 
-	delete(jf.set, id)
+	delete(jf.Set, id)
 
 	return lj.saveFile(jf)
 }
@@ -156,7 +158,7 @@ func (lj *LocalJsonCollection)Iter(o Obj, fn func(id Id, o Obj) error) error {
 		return err
 	}
 
-	for id, data := range jf.set {
+	for id, data := range jf.Set {
 		err = json.Unmarshal(data, o)
 		if err == nil {
 			err = fn(id, o)
@@ -186,7 +188,7 @@ func (lj *LocalJsonCollection)loadFile() (*localJsonFile, error) {
 			return nil, err
 		}
 
-		return &localJsonFile{set: make(map[Id]json.RawMessage)}, nil
+		return &localJsonFile{Set: make(map[Id]json.RawMessage)}, nil
 	}
 
 	defer f.Close()

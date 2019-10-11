@@ -462,6 +462,16 @@ func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(maps) == 0 {
+		id, err := mcol.Add(-1, &Map{Name: "default"})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		maps = append(maps, &Map{Id: id, Name: "default"})
+	}
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(&LoadMapsResp{M: maps})
 }
