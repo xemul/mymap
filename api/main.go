@@ -39,7 +39,11 @@ func (c *Claims)mapsCol() string { return "maps." + c.UserId }
 func (c *Claims)pointsCol(mapid Id) string { return "points." + strconv.Itoa(int(mapid)) }
 func (c *Claims)areasCol(mapid Id) string { return "areas." + strconv.Itoa(int(mapid)) }
 
-func (c *Claims)checkMapCol(mapid Id) bool {
+func (c *Claims)checkMapCol(mapid Id, r *http.Request) bool {
+	if r.Method == "GET" {
+		return true
+	}
+
 	mcol := storage.Col(c.mapsCol())
 	defer mcol.Close()
 
@@ -123,6 +127,11 @@ func handleMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !c.checkMapCol(mapid, r) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
 	switch r.Method {
 	case "PUT":
 		handlePutMap(c, mapid, w, r)
@@ -194,6 +203,11 @@ func handleMapGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !c.checkMapCol(mapid, r) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
 	switch r.Method {
 	case "GET":
 		handleListGeos(c, mapid, w, r)
@@ -255,11 +269,6 @@ func handleSaveGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request)
 	var sv SaveGeoReq
 	var sw sync.WaitGroup
 
-	if !c.checkMapCol(mapid) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&sv)
 	if err != nil {
@@ -318,6 +327,11 @@ func handleMapVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !c.checkMapCol(mapid, r) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
 	switch r.Method {
 	case "GET":
 		handleListVisits(c, mapid, -1, w)
@@ -364,6 +378,11 @@ func handleMapPoint(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !c.checkMapCol(mapid, r) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
 	pid, err := qId(mux.Vars(r)["pid"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -379,11 +398,6 @@ func handleMapPoint(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUpdatePoint(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
-	if !c.checkMapCol(mapid) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
 	var npt Point
 
 	defer r.Body.Close()
@@ -421,11 +435,6 @@ func handleUpdatePoint(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.
 }
 
 func handleRemovePoint(c *Claims, mapid, pid Id, w http.ResponseWriter) {
-	if !c.checkMapCol(mapid) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
 	pcol := storage.Col(c.pointsCol(mapid))
 	defer pcol.Close()
 
@@ -445,6 +454,11 @@ func handlePointVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !c.checkMapCol(mapid, r) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
 	pid, err := qId(mux.Vars(r)["pid"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -460,11 +474,6 @@ func handlePointVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleSaveVisit(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
-	if !c.checkMapCol(mapid) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
 	var sv Visit
 
 	defer r.Body.Close()
@@ -497,6 +506,11 @@ func handlePointVisit(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !c.checkMapCol(mapid, r) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
 	pid, err := qId(mux.Vars(r)["pid"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -516,11 +530,6 @@ func handlePointVisit(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteVisit(c *Claims, mapid, pid Id, vn int, w http.ResponseWriter) {
-	if !c.checkMapCol(mapid) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
 	pcol := storage.Col(c.pointsCol(mapid))
 	defer pcol.Close()
 
@@ -550,6 +559,11 @@ func handleMapArea(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !c.checkMapCol(mapid, r) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
 	aid, err := qId(mux.Vars(r)["aid"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -563,11 +577,6 @@ func handleMapArea(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRemoveArea(c *Claims, mapid, aid Id, w http.ResponseWriter) {
-	if !c.checkMapCol(mapid) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
 	acol := storage.Col(c.areasCol(mapid))
 	defer acol.Close()
 
