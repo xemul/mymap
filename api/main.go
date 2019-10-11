@@ -4,6 +4,7 @@ import (
 	"os"
 	"log"
 	"flag"
+	"sync"
 	"errors"
 	"strconv"
 	"net/http"
@@ -15,6 +16,11 @@ import (
 )
 
 var noValue = errors.New("no value")
+
+func qId(pn string) (Id, error) {
+	v, err := qInt(pn)
+	return Id(v), err
+}
 
 func qInt(pn string) (int, error) {
 	if pn == "" {
@@ -29,64 +35,75 @@ type Claims struct {
 	UserId	string		`json:"id"`
 }
 
-func getMap(c *Claims, w http.ResponseWriter, r *http.Request) MDB {
-	mapid, err := qInt(mux.Vars(r)["mapid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return nil
-	}
+func (c *Claims)mapsCol() string { return "maps." + c.UserId }
+func (c *Claims)pointsCol(mapid Id) string { return "points." + strconv.Itoa(int(mapid)) }
+func (c *Claims)areasCol(mapid Id) string { return "areas." + strconv.Itoa(int(mapid)) }
 
-	db, err := storage.openUDB(c)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return nil
-	}
+func (c *Claims)checkMapCol(mapid Id) bool {
+	mcol := storage.Col(c.mapsCol())
+	defer mcol.Close()
 
-	defer db.Close()
-
-	mp, err := db.openMDB(mapid, r.Method != "GET")
-	if mp == nil {
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			http.Error(w, "no such map", http.StatusNotFound)
-		}
-
-		return nil
-	}
-
-	return mp
+	err := mcol.Get(mapid, nil)
+	return err == nil
 }
 
-func getPoint(c *Claims, w http.ResponseWriter, r *http.Request) (MDB, int) {
-	mp := getMap(c, w, r)
-	if mp == nil {
-		return nil, -1
+func handleListGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
+	var geos LoadGeosResp
+	var lw sync.WaitGroup
+
+	lw.Add(2)
+
+	var perr error
+	go func() {
+		pcol := storage.Col(c.pointsCol(mapid))
+		defer pcol.Close()
+
+		perr = pcol.Iter(&Point{}, func(id Id, x Obj) error {
+			pt := *(x.(*Point))
+			geos.Points = append(geos.Points, &pt)
+			return nil
+		})
+
+		lw.Done()
+	}()
+
+	var aerr error
+	go func() {
+		acol := storage.Col(c.areasCol(mapid))
+		defer acol.Close()
+
+		aerr = acol.Iter(&Area{}, func(id Id, x Obj) error {
+			a := *(x.(*Area))
+			geos.Areas = append(geos.Areas, &a)
+			return nil
+		})
+
+		lw.Done()
+	}()
+
+	lw.Wait()
+	err := aerr
+	if err == nil {
+		err = perr
 	}
 
-	pid, err := qInt(mux.Vars(r)["pid"])
-	if err != nil {
-		mp.Close()
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return nil, pid
-	}
-
-	return mp, pid
-}
-
-func handleListGeos(mp MDB, w http.ResponseWriter, r *http.Request) {
-	load, err := mp.LoadGeos()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(load)
+	json.NewEncoder(w).Encode(&geos)
 }
 
-func handleSaveGeos(mp MDB, w http.ResponseWriter, r *http.Request) {
+func handleSaveGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 	var sv SaveGeoReq
+	var sw sync.WaitGroup
+
+	if !c.checkMapCol(mapid) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
 
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&sv)
@@ -95,7 +112,42 @@ func handleSaveGeos(mp MDB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = mp.SavePoint(&sv)
+	var perr error
+	if sv.Point != nil {
+		sw.Add(1)
+		pt := sv.Point
+		go func() {
+			pcol := storage.Col(c.pointsCol(mapid))
+			defer pcol.Close()
+			_, perr = pcol.Add(pt.Id, pt)
+			sw.Done()
+		}()
+	}
+
+	var aerr error
+	if len(sv.Areas) > 0 {
+		sw.Add(1)
+		go func() {
+			i := -1
+			acol := storage.Col(c.areasCol(mapid))
+			defer acol.Close()
+			aerr = acol.AddMany(func() (Id, Obj) {
+				i++
+				if i >= len(sv.Areas) {
+					return -1, nil
+				}
+				a := sv.Areas[i]
+				return a.Id, a
+			})
+			sw.Done()
+		}()
+	}
+
+	sw.Wait()
+	err = perr
+	if err == nil {
+		err = aerr
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -104,17 +156,58 @@ func handleSaveGeos(mp MDB, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleUpdatePoint(mp MDB, pid int, w http.ResponseWriter, r *http.Request) {
-	var pt Point
+func handleRemovePoint(c *Claims, mapid, pid Id, w http.ResponseWriter) {
+	if !c.checkMapCol(mapid) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
+	pcol := storage.Col(c.pointsCol(mapid))
+	defer pcol.Close()
+
+	err := pcol.Del(pid)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func handleUpdatePoint(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
+	if !c.checkMapCol(mapid) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
+	var npt Point
 
 	defer r.Body.Close()
-	err := json.NewDecoder(r.Body).Decode(&pt)
+	err := json.NewDecoder(r.Body).Decode(&npt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = mp.PatchPoint(pid, &pt)
+	pcol := storage.Col(c.pointsCol(mapid))
+	defer pcol.Close()
+
+	err = pcol.Upd(pid, &PointX{}, func(o Obj) error {
+		pt := o.(*PointX)
+
+		if npt.Name != "" {
+			pt.Name = npt.Name
+		}
+
+		if npt.Area != 0 {
+			pt.Area = npt.Area
+			pt.Lat = npt.Lat
+			pt.Lng = npt.Lng
+			pt.Countries = npt.Countries
+		}
+
+		return nil
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -124,30 +217,34 @@ func handleUpdatePoint(mp MDB, pid int, w http.ResponseWriter, r *http.Request) 
 }
 
 func handleMapPoint(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mp, pid := getPoint(c, w, r)
-	if mp == nil {
+	mapid, err := qId(mux.Vars(r)["mapid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	defer mp.Close()
+	pid, err := qId(mux.Vars(r)["pid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
 	switch r.Method {
 	case "PATCH":
-		handleUpdatePoint(mp, pid, w, r)
+		handleUpdatePoint(c, mapid, pid, w, r)
 	case "DELETE":
-		handleRemoveGeo(mp, pid, "point", w)
+		handleRemovePoint(c, mapid, pid, w)
 	}
 }
 
 func handleMapArea(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mp := getMap(c, w, r)
-	if mp == nil {
+	mapid, err := qId(mux.Vars(r)["mapid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	defer mp.Close()
-
-	aid, err := qInt(mux.Vars(r)["aid"])
+	aid, err := qId(mux.Vars(r)["aid"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -155,18 +252,22 @@ func handleMapArea(c *Claims, w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "DELETE":
-		handleRemoveGeo(mp, aid, "area", w)
+		handleRemoveArea(c, mapid, aid, w)
 	}
 }
 
-func handleRemoveGeo(mp MDB, gid int, gtype string, w http.ResponseWriter) {
-	ok, err := mp.RemoveGeo(gid, gtype)
+func handleRemoveArea(c *Claims, mapid, aid Id, w http.ResponseWriter) {
+	if !c.checkMapCol(mapid) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
+	acol := storage.Col(c.areasCol(mapid))
+	defer acol.Close()
+
+	err := acol.Del(aid)
 	if err != nil {
-		if ok {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			http.Error(w, "no such area", http.StatusNotFound)
-		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -174,34 +275,60 @@ func handleRemoveGeo(mp MDB, gid int, gtype string, w http.ResponseWriter) {
 }
 
 func handleMapGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mp := getMap(c, w, r)
-	if mp == nil {
+	mapid, err := qId(mux.Vars(r)["mapid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	defer mp.Close()
-
 	switch r.Method {
 	case "GET":
-		handleListGeos(mp, w, r)
+		handleListGeos(c, mapid, w, r)
 	case "POST":
-		handleSaveGeos(mp, w, r)
+		handleSaveGeos(c, mapid, w, r)
 	}
 }
 
-func handleListVisits(mp MDB, w http.ResponseWriter, id int) {
-	viss, err := mp.LoadVisits(id)
+func handleListVisits(c *Claims, mapid, pid Id, w http.ResponseWriter) {
+	var pts []*PointX
+
+	pcol := storage.Col(c.pointsCol(mapid))
+	defer pcol.Close()
+
+	var err error
+
+	if pid == -1 {
+		var pt PointX
+		err = pcol.Get(pid, &pt)
+		pts = append(pts, &pt)
+	} else {
+		err = pcol.Iter(&PointX{}, func(id Id, x Obj) error {
+			pt := *(x.(*PointX))
+			pts = append(pts, &pt)
+			return nil
+		})
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	var viss LoadVisitsResp
+	for _, pt := range pts {
+		viss.A = append(viss.A, pt.Vis...)
+	}
+
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(viss)
+	json.NewEncoder(w).Encode(&viss)
 }
 
-func handleSaveVisit(mp MDB, w http.ResponseWriter, r *http.Request, id int) {
-	var sv SaveVisitReq
+func handleSaveVisit(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
+	if !c.checkMapCol(mapid) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
+	var sv Visit
 
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&sv)
@@ -210,7 +337,14 @@ func handleSaveVisit(mp MDB, w http.ResponseWriter, r *http.Request, id int) {
 		return
 	}
 
-	err = mp.SaveVisit(id, &sv)
+	pcol := storage.Col(c.pointsCol(mapid))
+	defer pcol.Close()
+
+	err = pcol.Upd(pid, &PointX{}, func(x Obj) error {
+		pt := x.(*PointX)
+		pt.Vis = append(pt.Vis, &sv)
+		return nil
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -220,12 +354,17 @@ func handleSaveVisit(mp MDB, w http.ResponseWriter, r *http.Request, id int) {
 }
 
 func handlePointVisit(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mp, pid := getPoint(c, w, r)
-	if mp == nil {
+	mapid, err := qId(mux.Vars(r)["mapid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	defer mp.Close()
+	pid, err := qId(mux.Vars(r)["pid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
 	vn, err := qInt(mux.Vars(r)["vn"])
 	if err != nil {
@@ -235,18 +374,32 @@ func handlePointVisit(c *Claims, w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "DELETE":
-		handleDeleteVisit(mp, w, pid, vn)
+		handleDeleteVisit(c, mapid, pid, vn, w)
 	}
 }
 
-func handleDeleteVisit(mp MDB, w http.ResponseWriter, id, vn int) {
-	ok, err := mp.RemoveVisit(id, vn)
-	if err != nil {
-		if ok {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		} else {
-			http.Error(w, "no such visit", http.StatusNotFound)
+func handleDeleteVisit(c *Claims, mapid, pid Id, vn int, w http.ResponseWriter) {
+	if !c.checkMapCol(mapid) {
+		http.Error(w, "no such map", http.StatusNotFound)
+		return
+	}
+
+	pcol := storage.Col(c.pointsCol(mapid))
+	defer pcol.Close()
+
+	err := pcol.Upd(pid, &PointX{}, func(o Obj) error {
+		pt := o.(*PointX)
+		va := pt.Vis
+
+		if vn >= len(va) {
+			return errors.New("no such visit")
 		}
+
+		pt.Vis = append(va[:vn], va[vn+1:]...)
+		return nil
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -254,45 +407,37 @@ func handleDeleteVisit(mp MDB, w http.ResponseWriter, id, vn int) {
 }
 
 func handleMapVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mp := getMap(c, w, r)
-	if mp == nil {
+	mapid, err := qId(mux.Vars(r)["mapid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	defer mp.Close()
-
 	switch r.Method {
 	case "GET":
-		handleListVisits(mp, w, -1)
+		handleListVisits(c, mapid, -1, w)
 	}
 }
 
 func handlePointVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mp, pid := getPoint(c, w, r)
-	if mp == nil {
+	mapid, err := qId(mux.Vars(r)["mapid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	defer mp.Close()
+	pid, err := qId(mux.Vars(r)["pid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
 
 	switch r.Method {
 	case "GET":
-		handleListVisits(mp, w, pid)
+		handleListVisits(c, mapid, pid, w)
 	case "POST":
-		handleSaveVisit(mp, w, r, pid)
+		handleSaveVisit(c, mapid, pid, w, r)
 	}
-}
-
-func handleGetMap(mp MDB, w http.ResponseWriter, r *http.Request) {
-	data, err := mp.Raw()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
 }
 
 func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
@@ -301,15 +446,17 @@ func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := storage.openUDB(c)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	mcol := storage.Col(c.mapsCol())
+	defer mcol.Close()
 
-	defer db.Close()
+	var maps []*Map
 
-	maps, err := db.List()
+	err := mcol.Iter(&Map{}, func(id Id, x Obj) error {
+		nm := *(x.(*Map)) /* copy the map! */
+		maps = append(maps, &nm)
+		return nil
+	})
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -329,53 +476,46 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := storage.openUDB(c)
+	mcol := storage.Col(c.mapsCol())
+	defer mcol.Close()
+
+	id, err := mcol.Add(-1, &m)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	defer db.Close()
-
-	err = db.Create(&m)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	m.Id = id
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(&m)
 }
 
-func handleDeleteMap(c *Claims, mp MDB, w http.ResponseWriter, r *http.Request) {
-	db, err := storage.openUDB(c)
+func handleDeleteMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
+	mcol := storage.Col(c.mapsCol())
+	defer mcol.Close()
+
+	err := mcol.Del(mapid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	defer db.Close()
-
-	err = db.Remove(mp.Id())
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	storage.Drop(c.pointsCol(mapid))
+	storage.Drop(c.areasCol(mapid))
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handlePutMap(mp MDB, w http.ResponseWriter, r *http.Request) {
-	log.Printf("Upload map %d\n", mp.Id())
-
-	err := mp.Put(r.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
+func handlePutMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
+	/* FIXME -- implement */
+	w.WriteHeader(http.StatusMethodNotAllowed)
 }
+
+func handleGetMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
+	/* FIXME -- implement */
+	w.WriteHeader(http.StatusMethodNotAllowed)
+}
+
 
 func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -386,8 +526,11 @@ func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleUpdateMap(c *Claims, mp MDB, w http.ResponseWriter, r *http.Request) {
+func handleUpdateMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 	var nm Map
+
+	mcol := storage.Col(c.mapsCol())
+	defer mcol.Close()
 
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&nm)
@@ -396,13 +539,11 @@ func handleUpdateMap(c *Claims, mp MDB, w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	db, err := storage.openUDB(c)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	err = db.PatchMap(mp, &nm)
+	err = mcol.Upd(mapid, &Map{}, func(x Obj) error {
+		om := x.(*Map)
+		om.Name = nm.Name
+		return nil
+	})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -412,22 +553,21 @@ func handleUpdateMap(c *Claims, mp MDB, w http.ResponseWriter, r *http.Request) 
 }
 
 func handleMap(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mp := getMap(c, w, r)
-	if mp == nil {
+	mapid, err := qId(mux.Vars(r)["mapid"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	defer mp.Close()
-
 	switch r.Method {
 	case "PUT":
-		handlePutMap(mp, w, r)
-	case "PATCH":
-		handleUpdateMap(c, mp, w, r)
+		handlePutMap(c, mapid, w, r)
 	case "GET":
-		handleGetMap(mp, w, r)
+		handleGetMap(c, mapid, w, r)
+	case "PATCH":
+		handleUpdateMap(c, mapid, w, r)
 	case "DELETE":
-		handleDeleteMap(c, mp, w, r)
+		handleDeleteMap(c, mapid, w, r)
 	}
 }
 

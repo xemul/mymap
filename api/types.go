@@ -5,24 +5,24 @@ package main
  */
 
 type Map struct {
-	Id		int			`json:"id"`
+	Id		Id			`json:"id"`
 	Name		string			`json:"name"`
 	Copy		*int			`json:"copy,omitempty"`
 }
 
 type Area struct {
-	Id		int			`json:"id"`
+	Id		Id			`json:"id"`
 	Name		string			`json:"name"`
 	Type		string			`json:"type"`
 	Countries	[]string		`json:"countries"`
 }
 
 type Point struct {
-	Id		int			`json:"id"`
+	Id		Id			`json:"id"`
 	Name		string			`json:"name"`
 	Lat		float64			`json:"lat"`
 	Lng		float64			`json:"lng"`
-	Area		int			`json:"area"`
+	Area		Id			`json:"area"`
 	Countries	[]string		`json:"countries"`
 }
 
@@ -31,6 +31,11 @@ type Visit struct {
 	Tags		[]string		`json:"tags"`
 	Rating		int			`json:"rating"`
 	PId		*int			`json:"point,omitempty"`
+}
+
+type PointX struct {
+	Point					`json:",inline"`
+	Vis		[]*Visit		`json:"visits,omitempty"`
 }
 
 /*
@@ -51,32 +56,6 @@ type LoadGeosResp struct {
 	Areas		[]*Area			`json:"areas"`
 }
 
-type SaveVisitReq struct {
-	Visit					`json:",inline"`
-}
-
 type LoadVisitsResp struct {
 	A		[]*Visit		`json:"array"`
-}
-
-/*
- * "DB"
- */
-
-type UserFile struct {
-	Maps		map[int]*Map		`json:"maps"`
-}
-
-type GeosFile struct {
-	Points		map[int]*PointFile	`json:"points"`
-	Areas		map[int]*AreaFile	`json:"areas"`
-}
-
-type AreaFile struct {
-	Area				`json:",inline"`
-}
-
-type PointFile struct {
-	Point				`json:",inline"`
-	Visits		[]*Visit	`json:"visits,omitempty"`
 }

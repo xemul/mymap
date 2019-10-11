@@ -1,40 +1,26 @@
 package main
 
 import (
-	"io"
 	"errors"
 	"strings"
 )
 
+type Id int64
+type Obj interface{}
+
+type Collection interface {
+	Iter(Obj, func(Id, Obj) error) error
+	Add(Id, Obj) (Id, error)
+	AddMany(func() (Id, Obj)) error
+	Get(Id, Obj) error
+	Upd(Id, Obj, func(Obj) error) error
+	Del(Id) error
+	Close()
+}
+
 type DB interface {
-	openUDB(*Claims) (UDB, error)
-}
-
-type UDB interface {
-	Close()
-
-	openMDB(int, bool) (MDB, error)
-	List() ([]*Map, error)
-	Create(*Map) (error)
-	Remove(int) (error)
-	PatchMap(MDB, *Map) error
-}
-
-type MDB interface {
-	Id() int
-	Close()
-
-	Raw() ([]byte, error)
-	Put(io.Reader) error
-
-	SavePoint(*SaveGeoReq) error
-	LoadGeos() (*LoadGeosResp, error)
-	RemoveGeo(int, string) (bool, error)
-	PatchPoint(int, *Point) error
-
-	SaveVisit(int, *SaveVisitReq) error
-	LoadVisits(int) (*LoadVisitsResp, error)
-	RemoveVisit(int, int) (bool, error)
+	Col(string) Collection
+	Drop(string) error
 }
 
 var storage DB
