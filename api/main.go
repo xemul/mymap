@@ -39,11 +39,7 @@ func (c *Claims)mapsCol() string { return "maps." + c.UserId }
 func (c *Claims)pointsCol(mapid Id) string { return "points." + strconv.Itoa(int(mapid)) }
 func (c *Claims)areasCol(mapid Id) string { return "areas." + strconv.Itoa(int(mapid)) }
 
-func (c *Claims)checkMapCol(mapid Id, r *http.Request) bool {
-	if r.Method == "GET" {
-		return true
-	}
-
+func (c *Claims)checkMapCol(mapid Id) bool {
 	mcol := storage.Col(c.mapsCol())
 	defer mcol.Close()
 
@@ -121,7 +117,7 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 }
 
 type mapH func(*Claims, Id, http.ResponseWriter, *http.Request)
-type geoH func(*Claims, Id, Id, http.ResponseWriter, *http.Request)
+type geoH func(*Claims, Collection, Id, http.ResponseWriter, *http.Request)
 
 func withMap(handle mapH) auth {
 	return func(c *Claims, w http.ResponseWriter, r *http.Request) {
@@ -131,7 +127,7 @@ func withMap(handle mapH) auth {
 			return
 		}
 
-		if !c.checkMapCol(mapid, r) {
+		if r.Method != "GET" && !c.checkMapCol(mapid) {
 			http.Error(w, "no such map", http.StatusNotFound)
 			return
 		}
@@ -148,7 +144,10 @@ func withPoint(handle geoH) mapH {
 			return
 		}
 
-		handle(c, mapid, pid, w, r)
+		col := storage.Col(c.pointsCol(pid))
+		defer col.Close()
+
+		handle(c, col, pid, w, r)
 	}
 }
 
@@ -160,7 +159,10 @@ func withArea(handle geoH) mapH {
 			return
 		}
 
-		handle(c, mapid, aid, w, r)
+		col := storage.Col(c.areasCol(aid))
+		defer col.Close()
+
+		handle(c, col, aid, w, r)
 	}
 }
 
@@ -345,16 +347,14 @@ func handleSaveGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request)
 func handleMapVisits(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		handleListVisits(c, mapid, -1, w)
+		pcol := storage.Col(c.pointsCol(mapid))
+		defer pcol.Close()
+		handleListVisits(c, pcol, -1, w)
 	}
 }
 
-func handleListVisits(c *Claims, mapid, pid Id, w http.ResponseWriter) {
+func handleListVisits(c *Claims, pcol Collection, pid Id, w http.ResponseWriter) {
 	var pts []*PointX
-
-	pcol := storage.Col(c.pointsCol(mapid))
-	defer pcol.Close()
-
 	var err error
 
 	if pid == -1 {
@@ -382,16 +382,16 @@ func handleListVisits(c *Claims, mapid, pid Id, w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(&viss)
 }
 
-func handleMapPoint(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
+func handleMapPoint(c *Claims, pcol Collection, pid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "PATCH":
-		handleUpdatePoint(c, mapid, pid, w, r)
+		handleUpdatePoint(c, pcol, pid, w, r)
 	case "DELETE":
-		handleRemovePoint(c, mapid, pid, w)
+		handleRemovePoint(c, pcol, pid, w)
 	}
 }
 
-func handleUpdatePoint(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
+func handleUpdatePoint(c *Claims, pcol Collection, pid Id, w http.ResponseWriter, r *http.Request) {
 	var npt Point
 
 	defer r.Body.Close()
@@ -400,9 +400,6 @@ func handleUpdatePoint(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	pcol := storage.Col(c.pointsCol(mapid))
-	defer pcol.Close()
 
 	err = pcol.Upd(pid, &PointX{}, func(o Obj) error {
 		pt := o.(*PointX)
@@ -428,10 +425,7 @@ func handleUpdatePoint(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleRemovePoint(c *Claims, mapid, pid Id, w http.ResponseWriter) {
-	pcol := storage.Col(c.pointsCol(mapid))
-	defer pcol.Close()
-
+func handleRemovePoint(c *Claims, pcol Collection, pid Id, w http.ResponseWriter) {
 	err := pcol.Del(pid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -441,16 +435,16 @@ func handleRemovePoint(c *Claims, mapid, pid Id, w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handlePointVisits(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
+func handlePointVisits(c *Claims, pcol Collection, pid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
-		handleListVisits(c, mapid, pid, w)
+		handleListVisits(c, pcol, pid, w)
 	case "POST":
-		handleSaveVisit(c, mapid, pid, w, r)
+		handleSaveVisit(c, pcol, pid, w, r)
 	}
 }
 
-func handleSaveVisit(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
+func handleSaveVisit(c *Claims, pcol Collection, pid Id, w http.ResponseWriter, r *http.Request) {
 	var sv Visit
 
 	defer r.Body.Close()
@@ -459,9 +453,6 @@ func handleSaveVisit(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Re
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	pcol := storage.Col(c.pointsCol(mapid))
-	defer pcol.Close()
 
 	err = pcol.Upd(pid, &PointX{}, func(x Obj) error {
 		pt := x.(*PointX)
@@ -476,7 +467,7 @@ func handleSaveVisit(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusOK)
 }
 
-func handlePointVisit(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
+func handlePointVisit(c *Claims, pcol Collection, pid Id, w http.ResponseWriter, r *http.Request) {
 	vn, err := qInt(mux.Vars(r)["vn"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -485,14 +476,11 @@ func handlePointVisit(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.R
 
 	switch r.Method {
 	case "DELETE":
-		handleDeleteVisit(c, mapid, pid, vn, w)
+		handleDeleteVisit(c, pcol, pid, vn, w)
 	}
 }
 
-func handleDeleteVisit(c *Claims, mapid, pid Id, vn int, w http.ResponseWriter) {
-	pcol := storage.Col(c.pointsCol(mapid))
-	defer pcol.Close()
-
+func handleDeleteVisit(c *Claims, pcol Collection, pid Id, vn int, w http.ResponseWriter) {
 	err := pcol.Upd(pid, &PointX{}, func(o Obj) error {
 		pt := o.(*PointX)
 		va := pt.Vis
@@ -512,17 +500,14 @@ func handleDeleteVisit(c *Claims, mapid, pid Id, vn int, w http.ResponseWriter) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handleMapArea(c *Claims, mapid, aid Id, w http.ResponseWriter, r *http.Request) {
+func handleMapArea(c *Claims, acol Collection, aid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "DELETE":
-		handleRemoveArea(c, mapid, aid, w)
+		handleRemoveArea(c, acol, aid, w)
 	}
 }
 
-func handleRemoveArea(c *Claims, mapid, aid Id, w http.ResponseWriter) {
-	acol := storage.Col(c.areasCol(mapid))
-	defer acol.Close()
-
+func handleRemoveArea(c *Claims, acol Collection, aid Id, w http.ResponseWriter) {
 	err := acol.Del(aid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
