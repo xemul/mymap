@@ -120,18 +120,51 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&m)
 }
 
-func handleMap(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mapid, err := qId(mux.Vars(r)["mapid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
+type mapH func(*Claims, Id, http.ResponseWriter, *http.Request)
+type geoH func(*Claims, Id, Id, http.ResponseWriter, *http.Request)
 
-	if !c.checkMapCol(mapid, r) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
+func withMap(handle mapH) auth {
+	return func(c *Claims, w http.ResponseWriter, r *http.Request) {
+		mapid, err := qId(mux.Vars(r)["mapid"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 
+		if !c.checkMapCol(mapid, r) {
+			http.Error(w, "no such map", http.StatusNotFound)
+			return
+		}
+
+		handle(c, mapid, w, r)
+	}
+}
+
+func withPoint(handle geoH) mapH {
+	return func(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
+		pid, err := qId(mux.Vars(r)["pid"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		handle(c, mapid, pid, w, r)
+	}
+}
+
+func withArea(handle geoH) mapH {
+	return func(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
+		aid, err := qId(mux.Vars(r)["aid"])
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		handle(c, mapid, aid, w, r)
+	}
+}
+
+func handleMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "PUT":
 		handlePutMap(c, mapid, w, r)
@@ -196,18 +229,7 @@ func handleDeleteMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handleMapGeos(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mapid, err := qId(mux.Vars(r)["mapid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	if !c.checkMapCol(mapid, r) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
+func handleMapGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		handleListGeos(c, mapid, w, r)
@@ -320,18 +342,7 @@ func handleSaveGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusOK)
 }
 
-func handleMapVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mapid, err := qId(mux.Vars(r)["mapid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	if !c.checkMapCol(mapid, r) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
+func handleMapVisits(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		handleListVisits(c, mapid, -1, w)
@@ -371,24 +382,7 @@ func handleListVisits(c *Claims, mapid, pid Id, w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(&viss)
 }
 
-func handleMapPoint(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mapid, err := qId(mux.Vars(r)["mapid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	if !c.checkMapCol(mapid, r) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
-	pid, err := qId(mux.Vars(r)["pid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
+func handleMapPoint(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "PATCH":
 		handleUpdatePoint(c, mapid, pid, w, r)
@@ -447,24 +441,7 @@ func handleRemovePoint(c *Claims, mapid, pid Id, w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handlePointVisits(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mapid, err := qId(mux.Vars(r)["mapid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	if !c.checkMapCol(mapid, r) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
-	pid, err := qId(mux.Vars(r)["pid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
+func handlePointVisits(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		handleListVisits(c, mapid, pid, w)
@@ -499,24 +476,7 @@ func handleSaveVisit(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusOK)
 }
 
-func handlePointVisit(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mapid, err := qId(mux.Vars(r)["mapid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	if !c.checkMapCol(mapid, r) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
-	pid, err := qId(mux.Vars(r)["pid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
+func handlePointVisit(c *Claims, mapid, pid Id, w http.ResponseWriter, r *http.Request) {
 	vn, err := qInt(mux.Vars(r)["vn"])
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -552,24 +512,7 @@ func handleDeleteVisit(c *Claims, mapid, pid Id, vn int, w http.ResponseWriter) 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func handleMapArea(c *Claims, w http.ResponseWriter, r *http.Request) {
-	mapid, err := qId(mux.Vars(r)["mapid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	if !c.checkMapCol(mapid, r) {
-		http.Error(w, "no such map", http.StatusNotFound)
-		return
-	}
-
-	aid, err := qId(mux.Vars(r)["aid"])
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
+func handleMapArea(c *Claims, mapid, aid Id, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "DELETE":
 		handleRemoveArea(c, mapid, aid, w)
@@ -651,14 +594,22 @@ func main() {
 	}
 
 	r := mux.NewRouter()
-	r.Handle("/maps", auth(handleMaps)).Methods("GET", "POST", "OPTIONS")
-	r.Handle("/maps/{mapid}", auth(handleMap)).Methods("PUT", "PATCH", "DELETE", "GET", "OPTIONS")
-	r.Handle("/maps/{mapid}/geos", auth(handleMapGeos)).Methods("GET", "POST", "OPTIONS")
-	r.Handle("/maps/{mapid}/visits", auth(handleMapVisits)).Methods("GET", "OPTIONS")
-	r.Handle("/maps/{mapid}/geos/points/{pid}", auth(handleMapPoint)).Methods("DELETE", "PATCH", "OPTIONS")
-	r.Handle("/maps/{mapid}/geos/points/{pid}/visits", auth(handlePointVisits)).Methods("GET", "POST", "OPTIONS")
-	r.Handle("/maps/{mapid}/geos/points/{pid}/visits/{vn}", auth(handlePointVisit)).Methods("DELETE", "OPTIONS")
-	r.Handle("/maps/{mapid}/geos/areas/{aid}", auth(handleMapArea)).Methods("DELETE", "OPTIONS")
+	r.Handle("/maps",
+			auth(handleMaps)).Methods("GET", "POST", "OPTIONS")
+	r.Handle("/maps/{mapid}",
+			auth(withMap(handleMap))).Methods("PUT", "PATCH", "DELETE", "GET", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos",
+			auth(withMap(handleMapGeos))).Methods("GET", "POST", "OPTIONS")
+	r.Handle("/maps/{mapid}/visits",
+			auth(withMap(handleMapVisits))).Methods("GET", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos/points/{pid}",
+			auth(withMap(withPoint(handleMapPoint)))).Methods("DELETE", "PATCH", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos/points/{pid}/visits",
+			auth(withMap(withPoint(handlePointVisits)))).Methods("GET", "POST", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos/points/{pid}/visits/{vn}",
+			auth(withMap(withPoint(handlePointVisit)))).Methods("DELETE", "OPTIONS")
+	r.Handle("/maps/{mapid}/geos/areas/{aid}",
+			auth(withMap(withArea(handleMapArea)))).Methods("DELETE", "OPTIONS")
 
 	headersOk := handlers.AllowedHeaders([]string{"Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{"*"})
