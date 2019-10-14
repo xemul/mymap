@@ -162,13 +162,15 @@ func (lj *LocalJsonCollection)Del(id Id) error {
 	return lj.saveFile(jf)
 }
 
-func (lj *LocalJsonCollection)Iter(o Obj, fn func(id Id, o Obj) error) error {
+func (lj *LocalJsonCollection)Iter(of func() Obj, fn func(id Id, o Obj) error) error {
 	jf, err := lj.loadFile()
 	if err != nil {
 		return err
 	}
 
 	for id, data := range jf.Set {
+		o := of()
+
 		err = json.Unmarshal(data, o)
 		if err == nil {
 			err = fn(id, o)

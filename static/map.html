@@ -36,7 +36,7 @@
 			<span v-if="sess != null">
 				<span v-if="sess.user == null">
 					<a href="/login"><img src="static/img/login.svg"></a></span>
-				<span v-if="sess.user != null">{{sess.user.name}}
+				<span v-if="sess.user != null"><small>{{sess.user.name}}</small>
 					<a href="/logout"><img src="static/img/logout.svg" height=20px></a></span>
 			</span>
 		</div>
@@ -48,6 +48,8 @@
 				<img src="static/img/points.svg" title="Points" height=20px></a>
 			<a href="#" v-on:click="showAreas($event)">
 				<img src="static/img/areas.svg" title="Areas" height=20px></a>
+			<a href="#" v-on:click="showCountries($event)">
+				<img src="static/img/countries.svg" title="Countries" height=20px>
 
 			<span v-if="sess != null && sess.user != null">
 				<a href="#" v-on:click="showMaps($event)">
@@ -208,6 +210,18 @@
 			<td>{{vis.tags.join(" ")}}</td>
 		</tr>
 		</table>
+	</div>
+	<div id="countries" v-if="sidebar.n == 'countries'">
+	<hr>
+	<div class="right">
+		<a href="#" v-on:click="closeCountries($event)" align="right"><img src="static/img/close.svg"></a>
+	</div>
+	Countries
+	<div>
+	<span v-for="c in countries">
+			<flagimg v-bind:country=c></flagimg>
+	</span>
+	</div>
 	</div>
 	<div id="areas" v-if="sidebar.n == 'areas'">
 		<hr>

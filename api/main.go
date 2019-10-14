@@ -100,9 +100,9 @@ func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 
 	var maps []*Map
 
-	err := mcol.Iter(&Map{}, func(id Id, x Obj) error {
-		nm := *(x.(*Map)) /* copy the map! */
-		maps = append(maps, &nm)
+	err := mcol.Iter(func() Obj { return &Map{} }, func(id Id, x Obj) error {
+		nm := x.(*Map)
+		maps = append(maps, nm)
 		return nil
 	})
 
@@ -378,22 +378,26 @@ func handleListGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request)
 
 	err := withGeos(c, mapid,
 		func(acol Collection) error {
-			return acol.Iter(&Area{}, func(id Id, x Obj) error {
-				a := *(x.(*Area))
-				geos.Areas = append(geos.Areas, &a)
+			return acol.Iter(func() Obj { return &Area{} }, func(id Id, x Obj) error {
+				a := x.(*Area)
+				geos.Areas = append(geos.Areas, a)
 				return nil
 			})
 		},
 		func(pcol Collection) error {
-			return pcol.Iter(&Point{}, func(id Id, x Obj) error {
-				pt := *(x.(*Point))
-				geos.Points = append(geos.Points, &pt)
+			return pcol.Iter(func() Obj { return &Point{} }, func(id Id, x Obj) error {
+				pt := x.(*Point)
+				geos.Points = append(geos.Points, pt)
 				return nil
 			})
 		})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	for _, a := range geos.Areas {
+		log.Print(a)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -459,9 +463,9 @@ func handleListVisits(c *Claims, pcol Collection, pid Id, w http.ResponseWriter)
 		err = pcol.Get(pid, &pt)
 		pts = append(pts, &pt)
 	} else {
-		err = pcol.Iter(&PointX{}, func(id Id, x Obj) error {
-			pt := *(x.(*PointX))
-			pts = append(pts, &pt)
+		err = pcol.Iter(func() Obj { return &PointX{} }, func(id Id, x Obj) error {
+			pt := x.(*PointX)
+			pts = append(pts, pt)
 			return nil
 		})
 	}

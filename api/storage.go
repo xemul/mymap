@@ -11,7 +11,7 @@ type Obj interface{
 
 type Collection interface {
 	Create() error
-	Iter(Obj, func(Id, Obj) error) error
+	Iter(func() Obj, func(Id, Obj) error) error
 	Add(Id, Obj) error
 	AddMany(func() (Id, Obj)) error
 	Get(Id, Obj) error

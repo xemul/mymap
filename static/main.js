@@ -439,6 +439,10 @@ var menuCtl = new Vue({
 			sidebarSwitch.show("areas", areasCtl.clearAreas)
 		},
 
+		showCountries: () => {
+			sidebarSwitch.show("countries", countriesCtl.clearCountries)
+		},
+
 		showTimeline: () => {
 			sidebarSwitch.show("timeline", timelineCtl.clearTimeline)
 			timelineCtl.load()
@@ -690,6 +694,34 @@ var markerCtl = new Vue({
 			markerCtl.inside = null
 			markerLayer.setMark(null)
 		},
+	},
+})
+
+var countriesCtl = new Vue({
+	el: '#countries',
+	data: {
+		sidebar: sidebarSwitch,
+	},
+	computed: {
+		countries: () => {
+			let dict = {}
+
+			Object.entries(areasCtl.loaded).forEach((a) => {
+				let area = a[1]
+				area.countries.forEach((cn, i) => { dict[cn] = true })
+			})
+
+			let list = []
+
+			Object.entries(dict).forEach((a) => { list.push(a[0]) })
+
+			list.sort()
+			return list
+		},
+	},
+	methods: {
+		closeCountries: () => { sidebarSwitch.close() },
+		clearCountries: () => {},
 	},
 })
 
