@@ -64,7 +64,7 @@ func withGeos(c *Claims, mapid Id, af func(Collection) error, pf func(Collection
 	var perr error
 
 	go func() {
-		pcol := storage.Col(c.areasCol(mapid))
+		pcol := storage.Col(c.pointsCol(mapid))
 		defer pcol.Close()
 		perr = pf(pcol)
 		wg.Done()
@@ -166,7 +166,7 @@ func createMap(c *Claims, m *Map) error {
 	}
 
 	if m.Copy != nil {
-		withGeos(c, m.Id,
+		err := withGeos(c, m.Id,
 			func(acol Collection) error {
 				oc := storage.Col(c.areasCol(*m.Copy))
 				defer oc.Close()
@@ -189,7 +189,9 @@ func createMap(c *Claims, m *Map) error {
 
 				return err
 			})
-		/* Handle error... */
+		if err != nil {
+			log.Printf("Cannot copy map: %s", err.Error())
+		}
 	}
 
 	mcol := storage.Col(c.mapsCol())

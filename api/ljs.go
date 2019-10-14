@@ -37,7 +37,7 @@ type localJsonFile struct {
 }
 
 func (lj *LocalJsonCollection)Create() error {
-	f, err := os.OpenFile(lj.fname(), os.O_CREATE | os.O_EXCL, 0640)
+	f, err := os.OpenFile(lj.fname(), os.O_CREATE | os.O_EXCL | os.O_WRONLY, 0640)
 	if err != nil {
 		if os.IsExist(err) {
 			return IdExistsErr
@@ -244,7 +244,7 @@ func (lj *LocalJsonCollection)Raw() ([]byte, error) {
 func (lj *LocalJsonCollection)Write(data []byte) error {
 	var jf localJsonFile
 
-	err := json.Unmarshal(data, &jf)
+	err := json.Unmarshal(data, &jf.Set)
 	if err != nil {
 		return err
 	}
