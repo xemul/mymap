@@ -208,8 +208,48 @@ func handleMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePutMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
-	/* FIXME -- implement */
-	w.WriteHeader(http.StatusMethodNotAllowed)
+	var geos RawGeos
+
+	defer r.Body.Close()
+	err := json.NewDecoder(r.Body).Decode(&geos)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var uw sync.WaitGroup
+
+	uw.Add(2)
+
+	var aerr error
+	go func() {
+		acol := storage.Col(c.areasCol(mapid))
+		aerr = acol.Write(geos.Areas)
+		acol.Close()
+		uw.Done()
+	}()
+
+	var perr error
+	go func() {
+		pcol := storage.Col(c.pointsCol(mapid))
+		perr = pcol.Write(geos.Points)
+		pcol.Close()
+		uw.Done()
+	}()
+
+	uw.Wait()
+
+	err = aerr
+	if err == nil {
+		err = perr
+	}
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleGetMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {

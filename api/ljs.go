@@ -240,3 +240,14 @@ func (lj *LocalJsonCollection)Raw() ([]byte, error) {
 
 	return json.MarshalIndent(jf.Set, "", "    ")
 }
+
+func (lj *LocalJsonCollection)Write(data []byte) error {
+	var jf localJsonFile
+
+	err := json.Unmarshal(data, &jf)
+	if err != nil {
+		return err
+	}
+
+	return lj.saveFile(&jf)
+}

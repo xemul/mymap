@@ -18,6 +18,7 @@ type Collection interface {
 	Upd(Id, Obj, func(Obj) error) error
 	Del(Id) error
 	Raw() ([]byte, error)
+	Write([]byte) error
 	Close()
 }
 
