@@ -7,12 +7,12 @@ import (
 
 type Id int64
 type Obj interface{
-	SetId(Id)
 }
 
 type Collection interface {
+	Create() error
 	Iter(Obj, func(Id, Obj) error) error
-	Add(Id, Obj) (Id, error)
+	Add(Id, Obj) error
 	AddMany(func() (Id, Obj)) error
 	Get(Id, Obj) error
 	Upd(Id, Obj, func(Obj) error) error

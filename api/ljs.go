@@ -4,7 +4,6 @@ import (
 	"os"
 	"errors"
 	"io/ioutil"
-	"math/rand"
 	"encoding/json"
 )
 
@@ -37,6 +36,26 @@ type localJsonFile struct {
 	Set	map[Id]json.RawMessage		`json:"set"`
 }
 
+func (lj *LocalJsonCollection)Create() error {
+	f, err := os.OpenFile(lj.fname(), os.O_CREATE | os.O_EXCL, 0640)
+	if err != nil {
+		if os.IsExist(err) {
+			return IdExistsErr
+		}
+		return err
+	}
+
+	defer func() {
+		f.Close()
+		if err != nil {
+			os.Remove(f.Name())
+		}
+	}()
+
+	err = json.NewEncoder(f).Encode(lj.empty())
+	return err
+}
+
 func (lj *LocalJsonCollection)Upd(id Id, obj Obj, ucb func(Obj) error) error {
 	jf, err := lj.loadFile()
 	if err != nil {
@@ -63,35 +82,26 @@ func (lj *LocalJsonCollection)Upd(id Id, obj Obj, ucb func(Obj) error) error {
 	return lj.saveFile(jf)
 }
 
-func (lj *LocalJsonCollection)Add(id Id, obj Obj) (Id, error) {
+func (lj *LocalJsonCollection)Add(id Id, obj Obj) error {
 	jf, err := lj.loadFile()
 	if err != nil {
-		return -1, err
+		return err
 	}
 
 	if id == -1 {
-		for i := 0; i < 128; i++ {
-			id = Id(rand.Int() % 10000000)
-			if _, ok := jf.Set[id]; ok {
-				continue
-			}
-		}
+		return errors.New("bad ID")
+	}
 
-		if id == -1 {
-			return -1, errors.New("cannot find free id")
-		}
-
-		obj.SetId(id)
-	} else if _, ok := jf.Set[id]; ok {
-		return -1, IdExistsErr
+	if _, ok := jf.Set[id]; ok {
+		return IdExistsErr
 	}
 
 	jf.Set[id], err = json.Marshal(obj)
 	if err != nil {
-		return -1, err
+		return err
 	}
 
-	return id, lj.saveFile(jf)
+	return lj.saveFile(jf)
 }
 
 func (lj *LocalJsonCollection)AddMany(og func() (Id, Obj)) error {
@@ -181,6 +191,10 @@ func (ljs *LocalJsonCollection)drop() error {
 	return os.Remove(ljs.fname())
 }
 
+func (lf *LocalJsonCollection)empty() *localJsonFile {
+	return &localJsonFile{Set: make(map[Id]json.RawMessage)}
+}
+
 func (lj *LocalJsonCollection)loadFile() (*localJsonFile, error) {
 	f, err := os.Open(lj.fname())
 	if err != nil {
@@ -188,7 +202,7 @@ func (lj *LocalJsonCollection)loadFile() (*localJsonFile, error) {
 			return nil, err
 		}
 
-		return &localJsonFile{Set: make(map[Id]json.RawMessage)}, nil
+		return lj.empty(), nil
 	}
 
 	defer f.Close()

@@ -14,16 +14,12 @@ type Map struct {
 	Copy		*int			`json:"copy,omitempty"`
 }
 
-func (m *Map)SetId(id Id) { m.Id = id }
-
 type Area struct {
 	Id		Id			`json:"id"`
 	Name		string			`json:"name"`
 	Type		string			`json:"type"`
 	Countries	[]string		`json:"countries"`
 }
-
-func (a *Area)SetId(id Id) { a.Id = id }
 
 type Point struct {
 	Id		Id			`json:"id"`
@@ -33,8 +29,6 @@ type Point struct {
 	Area		Id			`json:"area"`
 	Countries	[]string		`json:"countries"`
 }
-
-func (p *Point)SetId(id Id) { p.Id = id }
 
 type Visit struct {
 	Date		string			`json:"date"`

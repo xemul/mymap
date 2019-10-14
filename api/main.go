@@ -8,6 +8,7 @@ import (
 	"errors"
 	"strconv"
 	"net/http"
+	"math/rand"
 	"encoding/json"
 	"encoding/base64"
 	"github.com/gorilla/mux"
@@ -79,13 +80,14 @@ func handleListMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(maps) == 0 {
-		id, err := mcol.Add(-1, &Map{Name: "default"})
+		m := &Map{Name: "default"}
+		err := createMap(c, m)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		maps = append(maps, &Map{Id: id, Name: "default"})
+		maps = append(maps, m)
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -102,18 +104,44 @@ func handleCreateMap(c *Claims, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mcol := storage.Col(c.mapsCol())
-	defer mcol.Close()
-
-	id, err := mcol.Add(-1, &m)
+	err = createMap(c, &m)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	m.Id = id
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(&m)
+}
+
+func createMap(c *Claims, m *Map) error {
+	for i := 0; i < 128; i++ {
+		id := Id(rand.Int() % 10000000)
+		ac := storage.Col(c.areasCol(id))
+		err := ac.Create()
+		ac.Close()
+
+		if err == nil {
+			m.Id = id
+			break
+		} else if err != IdExistsErr {
+			return err
+		}
+	}
+
+	if m.Id == -1 {
+		return errors.New("cannot generate map ID")
+	}
+
+	mcol := storage.Col(c.mapsCol())
+	defer mcol.Close()
+
+	err := mcol.Add(m.Id, &m)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type mapH func(*Claims, Id, http.ResponseWriter, *http.Request)
@@ -335,7 +363,7 @@ func handleSaveGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request)
 		go func() {
 			pcol := storage.Col(c.pointsCol(mapid))
 			defer pcol.Close()
-			_, perr = pcol.Add(pt.Id, pt)
+			perr = pcol.Add(pt.Id, pt)
 			sw.Done()
 		}()
 	}
