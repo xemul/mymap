@@ -11,7 +11,7 @@ import (
 type Map struct {
 	Id		Id			`json:"id"`
 	Name		string			`json:"name"`
-	Copy		*int			`json:"copy,omitempty"`
+	Copy		*Id			`json:"copy,omitempty"`
 }
 
 type Area struct {

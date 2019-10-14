@@ -165,6 +165,33 @@ func createMap(c *Claims, m *Map) error {
 		return errors.New("cannot generate map ID")
 	}
 
+	if m.Copy != nil {
+		withGeos(c, m.Id,
+			func(acol Collection) error {
+				oc := storage.Col(c.areasCol(*m.Copy))
+				defer oc.Close()
+
+				areas, err := oc.Raw()
+				if err == nil {
+					err = acol.Write(areas)
+				}
+
+				return err
+			},
+			func(pcol Collection) error {
+				oc := storage.Col(c.pointsCol(*m.Copy))
+				defer oc.Close()
+
+				points, err := oc.Raw()
+				if err == nil {
+					err = pcol.Write(points)
+				}
+
+				return err
+			})
+		/* Handle error... */
+	}
+
 	mcol := storage.Col(c.mapsCol())
 	defer mcol.Close()
 
