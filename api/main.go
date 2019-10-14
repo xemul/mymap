@@ -48,6 +48,38 @@ func (c *Claims)checkMapCol(mapid Id) bool {
 	return err == nil
 }
 
+func withGeos(c *Claims, mapid Id, af func(Collection) error, pf func(Collection) error) error {
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+
+	var aerr error
+	go func() {
+		acol := storage.Col(c.areasCol(mapid))
+		defer acol.Close()
+		aerr = af(acol)
+		wg.Done()
+	}()
+
+	var perr error
+
+	go func() {
+		pcol := storage.Col(c.areasCol(mapid))
+		defer pcol.Close()
+		perr = pf(pcol)
+		wg.Done()
+	}()
+
+	wg.Wait()
+
+	err := aerr
+	if err == nil {
+		err = perr
+	}
+
+	return err
+}
+
 func handleMaps(c *Claims, w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -217,33 +249,9 @@ func handlePutMap(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var uw sync.WaitGroup
-
-	uw.Add(2)
-
-	var aerr error
-	go func() {
-		acol := storage.Col(c.areasCol(mapid))
-		aerr = acol.Write(geos.Areas)
-		acol.Close()
-		uw.Done()
-	}()
-
-	var perr error
-	go func() {
-		pcol := storage.Col(c.pointsCol(mapid))
-		perr = pcol.Write(geos.Points)
-		pcol.Close()
-		uw.Done()
-	}()
-
-	uw.Wait()
-
-	err = aerr
-	if err == nil {
-		err = perr
-	}
-
+	err = withGeos(c, mapid,
+		func(acol Collection) error { return acol.Write(geos.Areas) },
+		func(pcol Collection) error { return pcol.Write(geos.Points) })
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -338,44 +346,22 @@ func handleMapGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) 
 
 func handleListGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 	var geos LoadGeosResp
-	var lw sync.WaitGroup
 
-	lw.Add(2)
-
-	var perr error
-	go func() {
-		pcol := storage.Col(c.pointsCol(mapid))
-		defer pcol.Close()
-
-		perr = pcol.Iter(&Point{}, func(id Id, x Obj) error {
-			pt := *(x.(*Point))
-			geos.Points = append(geos.Points, &pt)
-			return nil
+	err := withGeos(c, mapid,
+		func(acol Collection) error {
+			return acol.Iter(&Area{}, func(id Id, x Obj) error {
+				a := *(x.(*Area))
+				geos.Areas = append(geos.Areas, &a)
+				return nil
+			})
+		},
+		func(pcol Collection) error {
+			return pcol.Iter(&Point{}, func(id Id, x Obj) error {
+				pt := *(x.(*Point))
+				geos.Points = append(geos.Points, &pt)
+				return nil
+			})
 		})
-
-		lw.Done()
-	}()
-
-	var aerr error
-	go func() {
-		acol := storage.Col(c.areasCol(mapid))
-		defer acol.Close()
-
-		aerr = acol.Iter(&Area{}, func(id Id, x Obj) error {
-			a := *(x.(*Area))
-			geos.Areas = append(geos.Areas, &a)
-			return nil
-		})
-
-		lw.Done()
-	}()
-
-	lw.Wait()
-	err := aerr
-	if err == nil {
-		err = perr
-	}
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -387,7 +373,6 @@ func handleListGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request)
 
 func handleSaveGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request) {
 	var sv SaveGeoReq
-	var sw sync.WaitGroup
 
 	defer r.Body.Close()
 	err := json.NewDecoder(r.Body).Decode(&sv)
@@ -396,42 +381,29 @@ func handleSaveGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var perr error
-	if sv.Point != nil {
-		sw.Add(1)
-		pt := sv.Point
-		go func() {
-			pcol := storage.Col(c.pointsCol(mapid))
-			defer pcol.Close()
-			perr = pcol.Add(pt.Id, pt)
-			sw.Done()
-		}()
-	}
-
-	var aerr error
-	if len(sv.Areas) > 0 {
-		sw.Add(1)
-		go func() {
-			i := -1
-			acol := storage.Col(c.areasCol(mapid))
-			defer acol.Close()
-			aerr = acol.AddMany(func() (Id, Obj) {
-				i++
-				if i >= len(sv.Areas) {
-					return -1, nil
-				}
-				a := sv.Areas[i]
-				return a.Id, a
-			})
-			sw.Done()
-		}()
-	}
-
-	sw.Wait()
-	err = perr
-	if err == nil {
-		err = aerr
-	}
+	err = withGeos(c, mapid,
+		func(acol Collection) error {
+			if len(sv.Areas) > 0 {
+				i := -1
+				return acol.AddMany(func() (Id, Obj) {
+					i++
+					if i >= len(sv.Areas) {
+						return -1, nil
+					}
+					a := sv.Areas[i]
+					return a.Id, a
+				})
+			} else {
+				return nil
+			}
+		},
+		func(pcol Collection) error {
+			if sv.Point != nil {
+				return pcol.Add(sv.Point.Id, sv.Point)
+			} else {
+				return nil
+			}
+		})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
