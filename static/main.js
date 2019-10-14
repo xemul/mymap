@@ -1,6 +1,6 @@
 let config = {}
 
-function highlightPoint(ev, pnt) {
+function highlightPoint(pnt) {
 	mymap.setView(pnt, highlightZoom)
 	pnt.marker.setIcon(placeDIcon)
 	setTimeout(() => { pnt.marker.setIcon(placeIcon) }, highlightTimeout)
@@ -45,7 +45,7 @@ function getZoom(b) {
 	return sizeZoom(sz)
 }
 
-function highlightArea(ev, area) {
+function highlightArea(area) {
 	if (!area.layer) {
 		return
 	}
@@ -133,6 +133,24 @@ backendRq = function(rq) {
 		}
 	})
 }
+
+Vue.component('pointln', {
+	props: ['pnt'],
+	template:
+		`<span>
+		<a href="#" v-on:click=highlightPoint(pnt)><img src="static/img/locate.svg"></a>
+		{{pnt.name}}
+		</span>`,
+})
+
+Vue.component('arealn', {
+	props: ['area'],
+	template:
+		`<span>
+		<a href="#" v-on:click=highlightArea(area)><img src="static/img/locate.svg"></a>
+		{{area.name}}
+		</span>`,
+})
 
 Vue.component('rateimg', {
 	props: ['rt'],
@@ -564,7 +582,7 @@ var mapCtl = new Vue({
 			Vue.nextTick(() => {
 				mymap.invalidateSize()
 				if (pt != null) {
-					highlightPoint(null, pt)
+					highlightPoint(pt)
 				}
 			})
 		}
@@ -1269,7 +1287,7 @@ var propsCtl = new Vue({
 })
 
 function showPoint(ev, pnt) {
-	highlightPoint(ev, pnt)
+	highlightPoint(pnt)
 	propsCtl.showPoint(pnt)
 }
 

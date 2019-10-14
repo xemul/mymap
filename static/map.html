@@ -169,8 +169,7 @@
 		<table id="visitable">
 		<tr v-for="(pt, idx) in pointsS">
 			<td><rateimg v-bind:rt=pt.irating></rateimg><small>{{pt.rating}}/{{pt.nr}}</small></td>
-			<td><a href="#" v-on:click="highlightPoint($event, pt.pt)"><img src="static/img/locate.svg"></a>
-			{{pt.pt.name}}</td>
+			<td><pointln v-bind:pnt=pt.pt></pointln></td>
 			<td>
 				<template v-for="c in pt.pt.countries">
 					<a href="#" v-on:click="selectCountry($event, c)">
@@ -198,8 +197,7 @@
 		<tr v-for="(vis, idx) in visitedS">
 			<td align="right"><small>{{vis.date}}</small></td>
 			<td><rateimg v-bind:rt=vis.rating></rateimg></td>
-			<td><a href="#" v-on:click="highlightPoint($event, vis.pt)"><img src="static/img/locate.svg"></a>
-			{{vis.pt.name}}</td>
+			<td><pointln v-bind:pnt=vis.pt></pointln></td>
 			<td>
 				<template v-for="c in vis.pt.countries">
 					<a href="#" v-on:click="selectCountry($event, c)">
@@ -234,12 +232,8 @@
 				</a>
 			</template>
 			</td>
-			<td>
-			<a href="#" v-on:click="highlightArea($event, area)"><img src="static/img/locate.svg"></a>
-			</td>
-			<td style="word-break:break-all" width="100%">
-			{{area.name}}
-			</td>
+			<td style="word-break:break-all" width="100%"><arealn v-bind:area=area></arealn></td>
+
 			<td>
 			<span v-if="area.state != 'ready'">
 				<small>{{area.state}}...</small>
@@ -276,14 +270,7 @@
 				</td>
 				<td width="100%" valign="top"><table border=0 width=100%>
 				<tr v-for="pnt in bkt.pts">
-					<td>
-					<a href="#" v-on:click="highlightPoint($event, pnt)"><img src="static/img/locate.svg"></a>
-					</td>
-					<td style="word-break:break-all" width="100%">
-					<a href="#" v-on:click="showPoint($event, pnt)">
-					{{pnt.name}}
-					</a>
-					</td>
+					<td style="wodr-break:break-all" width="100%"><pointln v-bind:pnt=pnt></pointln></td>
 					<td>
 					<a href="#" v-on:click="removePoint($event, pnt)"><img src="static/img/remove.svg"></a>
 					</td>
