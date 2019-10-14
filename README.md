@@ -9,10 +9,16 @@ To start
 * dd if=/dev/urandom bs=128 count=1 | base64 -w0 > key.txt
 * /* prepare google-config.txt in app/ dir */
 
+* pip install bcrypt
+* /* prepare static-users.txt with 'name password' lines */
+* python mkusers.py > app/static-users.json
+
 * cd app/
 * npm install express
 * npm install passport
 * npm install passport-google-oauth
+* npm install passport-local
+* npm install bcrypt
 * npm install body-parser
 * npm install express-session
 * npm install jsonwebtoken

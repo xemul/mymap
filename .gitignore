@@ -3,3 +3,4 @@ package-lock.json
 api/api
 google-config.txt
 key.txt
+static-users.txt

@@ -1,0 +1,30 @@
+<html>
+<head>
+	
+	<title>MyMap</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/static/img/favicon-16x16.png">
+	<link rel="manifest" href="/static/img/site.webmanifest">
+</head>
+<body>
+<center>
+LOGIN
+<table>
+<tr> <td> <a href='/auth/google'>Google</a></td> </tr>
+<tr> <td>
+	User/Password<br>
+	<form action="/auth/local" method="get">
+		<input type="text" name="username" placeholder="username"/><br>
+		<input type="password" name="password"/><br>
+		<input type="submit" value="login"/>
+	</form>
+</td> </tr>
+</table>
+</center>
+</body>
+</html>

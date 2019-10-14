@@ -2,14 +2,16 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const passport = require('passport');
-const auth = require('./auth');
+const gauth = require('./auth-google');
+const lauth = require('./auth-local');
 const session = require('express-session');
 const jwt = require('jsonwebtoken');
 const parseURL = require('parseurl');
 
 const tokenKey = new Buffer(process.env.JWT_SIGN_KEY, 'base64')
 
-auth(passport)
+gauth(passport)
+lauth(passport)
 
 app.use(session({ secret: process.env.SESSION_SECRET, cookie: { }, resave: false, saveUninitialized: false }));
 app.use(passport.initialize())
@@ -40,7 +42,7 @@ app.get('/config', (req, res) => {
 })
 
 app.get('/login', (req, res) => {
-	res.redirect('/auth/google')
+	res.redirect('/static/login')
 })
 
 app.get('/logout', (req, res) => {
@@ -56,6 +58,24 @@ app.get('/creds', (req, res) => {
 		res.status(401).send('not authenticated')
 	}
 })
+
+app.get('/auth/local', passport.authenticate('local'),
+	(req, res) => {
+		let user = {
+			id: 'local.' + req.user.localId,
+			name: req.user.displayName,
+		}
+
+		console.log('Logged in ', user)
+
+		user.token = jwt.sign( {
+				id: user.id,
+				exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60),
+			}, tokenKey)
+
+		req.session.user = user
+		res.redirect('/')
+	})
 
 app.get('/auth/google', passport.authenticate('google', {
 	scope: [

@@ -396,10 +396,6 @@ func handleListGeos(c *Claims, mapid Id, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	for _, a := range geos.Areas {
-		log.Print(a)
-	}
-
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(&geos)
 }
